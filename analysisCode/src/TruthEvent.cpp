@@ -65,7 +65,15 @@ void TruthEvent::setTruthParticles()
 	continue;
       
       const Particle *truthParticle = m_truthEvent->GetTrack(part);
-      
+      /*
+      if (part<11)
+	{
+	   if ( abs(truthParticle->GetPdgCode()) == 4 || abs(truthParticle->GetPdgCode()) == 5  )
+	  // if ( abs(truthParticle->GetPdgCode()) == 5  )
+
+	    cout << "process ID : " << m_truthEvent->GetProcess() << " parton PID : " << truthParticle->GetPdgCode() << endl;
+	}
+      */
       /// only want final state particles
       if(truthParticle->GetStatus() != 1)
 	continue;
