@@ -20,6 +20,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "/phenix/u/dillfitz/sPHENIXStyle/sPhenixStyle.h"
+#include "/phenix/u/dillfitz/sPHENIXStyle/sPhenixStyle.C"
+
 using namespace std;
 using namespace fastjet;
 

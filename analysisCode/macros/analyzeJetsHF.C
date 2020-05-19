@@ -2,7 +2,8 @@
 
 void analyzeJetsHF() 
 {
-  
+  SetsPhenixStyle(); 
+
   infileName  = "../dataFiles/labJets_pE275_eE18_oc.root";
   outfileName = "../histos/labJetHistos_pE275_eE18_oc.root";
 
@@ -60,32 +61,32 @@ void write(string outf)
 
 void instantiateHistos()
 {
-  truthJetPt = new TH1F("truthJetPt","truth jet p_{T}; p_{T} (GeV); Counts", 40, 0., 20.);
+  truthJetPt = new TH1F("truthJetPt","; p_{T} [GeV]; Counts", 40, 0., 20.);
   truthJetPt->Sumw2();
 
-  recoJetPt = new TH1F("recoJetPt","reco jet p_{T}; p_{T} (GeV); Counts", 40, 0., 20.);
+  recoJetPt = new TH1F("recoJetPt","; p_{T} [GeV]; Counts", 40, 0., 20.);
   recoJetPt->Sumw2();
 
-  matchedJetPt = new TH2F("matchedJetPt","matched jet p_{T}; true p_{T} (GeV); reco p_{T} (GeV)", 40, 0., 20., 40, 0., 20.);
+  matchedJetPt = new TH2F("matchedJetPt","; true p_{T} [GeV]; reco p_{T} [GeV]", 40, 0., 20., 40, 0., 20.);
 
-  matchedJetEta = new TH2F("matchedJetEta","matched jet #eta; true #eta; reco #eta", 40, -4., 4., 40, -4., 4.);
+  matchedJetEta = new TH2F("matchedJetEta","; true #eta; reco #eta", 40, -4., 4., 40, -4., 4.);
 
-  truthZ = new TH1F("truthZ","truth z; z; Counts", 40, 0., 1.);
+  truthZ = new TH1F("truthZ","; z; Counts", 40, 0., 1.);
   truthZ->Sumw2();
 
-  truthJt = new TH1F("truthJt","truth j_{T}; j_{T}; Counts", 40, 0., 1.);
+  truthJt = new TH1F("truthJt","; j_{T}; Counts", 40, 0., 1.);
   truthJt->Sumw2();
 
-  truthR = new TH1F("truthR","truth r; r; Counts", 40, 0., 1.);
+  truthR = new TH1F("truthR","; r; Counts", 40, 0., 1.);
   truthR->Sumw2();
 
-  recoZ = new TH1F("recoZ","reco z; z; Counts", 40, 0., 1.);
+  recoZ = new TH1F("recoZ","; z; Counts", 40, 0., 1.);
   recoZ->Sumw2();
 
-  recoJt = new TH1F("recoJt","reco j_{T}; j_{T}; Counts", 40, 0., 1.);
+  recoJt = new TH1F("recoJt","; j_{T}; Counts", 40, 0., 1.);
   recoJt->Sumw2();
 
-  recoR = new TH1F("recoR","reco r; r; Counts", 40, 0., 1.);
+  recoR = new TH1F("recoR","; r; Counts", 40, 0., 1.);
   recoR->Sumw2();
 
   truthJetPtEta = new TH2F("truthJetPtEta",";p_{T}^{true} [GeV]; #eta",20,4,24,50,-3,3);
@@ -95,19 +96,19 @@ void instantiateHistos()
   recoJetPtEta = new TH2F("recoJetPtEta",";p_{T}^{rec} [GeV]; #eta",20,4,24,50,-3,3);
 
   recoJetPtPhi = new TH2F("recoJetPtPhi",";p_{T}^{rec} [GeV]; #phi [rad]",20,4,24,50,-3.14159,3.14159);
-  truthnConstPt = new TH2F("truthNConstPt","truth N_{con} p_{T}; N constituents; p_{T} (GeV)", 40, 0., 40., 40, 0., 20.);
+  truthnConstPt = new TH2F("truthNConstPt","; N constituents; p_{T} [GeV]", 40, 0., 40., 40, 0., 20.);
 
-  reconConstPt = new TH2F("recoNConstPt","reco N_{con} p_{T}; N constituents; p_{T} (GeV)", 40, 0., 40., 40, 0., 20.);
+  reconConstPt = new TH2F("recoNConstPt","; N constituents; p_{T} [GeV]", 40, 0., 40., 40, 0., 20.);
 
-  truthQ2Pt = new TH2F("truthQ2Pt", "truth Q^{2} p_{T}; Q^{2} (GeV^{2}); p_{T} (GeV)", 40, 0., 1000., 40, 0., 20.);
+  truthQ2Pt = new TH2F("truthQ2Pt", "; Q^[2} [GeV^{2}]; p_{T} [GeV]", 40, 0., 1000., 40, 0., 20.);
 
-  recoQ2Pt = new TH2F("recoQ2Pt", "reco Q^{2} p_{T}; Q^{2} (GeV^{2}); p_{T} (GeV)", 40, 0., 1000., 40, 0., 20.);
+  recoQ2Pt = new TH2F("recoQ2Pt", "; Q^{2} [GeV^{2}]; p_{T} [GeV]", 40, 0., 1000., 40, 0., 20.);
 
-  truthxQ2 = new TH2F("truthxQ2", "truth x Q^{2}; x; Q^{2} (GeV^{2})", 40, 0., 1., 40, 0., 1000.);
+  truthxQ2 = new TH2F("truthxQ2", "; x; Q^{2} [GeV^{2}]", 40, 0., 1., 40, 0., 1000.);
 
-  recoxQ2 = new TH2F("recoxQ2", "reco x Q^{2}; x; Q^{2} (GeV^{2})", 40, 0., 1., 40, 0., 1000.);
+  recoxQ2 = new TH2F("recoxQ2", "; x; Q^{2} [GeV^{2}]", 40, 0., 1., 40, 0., 1000.);
 
-  truthBosonCosTheta = new TH1F("bosonCosTheta","exchange boson cos#theta; cos#theta; Counts", 40, -2., 2.);
+  truthBosonCosTheta = new TH1F("bosonCosTheta","; cos#theta; Counts", 40, -2., 2.);
   truthBosonCosTheta->Sumw2();
 
   truthRecX = new TH2F("truthRecX",";x_{true}; x_{rec}",nxbins, xbins, nxbins, xbins);

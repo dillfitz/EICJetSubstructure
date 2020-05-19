@@ -8,7 +8,7 @@ This repository is intended to setup a software workflow for using the EIC smear
 This has only been tested on RCF, where access to the EIC environment is present. In order to use this, it is expected you have setup this environment via
 
 ```
-$ setenv EIC_LEVEL pro 
+$ setenv EIC_LEVEL dev 
 $ source /afs/rhic.bnl.gov/eic/restructured/etc/eic_cshrc.csh
 
 ```
