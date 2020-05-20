@@ -47,17 +47,6 @@ string infileName, outfileName;
 TFile *infile, *outfile;
 TTree *jettree;
 
-TH1 *truthJetPt, *recoJetPt;
-TH2 *matchedJetPt, *matchedJetEta;
-TH1 *truthZ, *truthJt, *truthR;
-TH1 *recoZ, *recoJt, *recoR;
-TH2 *truerecx, *truerecy, *truerecq2;
-TH2 *truthxQ2, *recoxQ2, *truthQ2Pt, *recoQ2Pt, *truthnConstPt, *reconConstPt;
-TH2 *truthJetPtEta, *truthJetPtPhi;
-TH2 *recoJetPtEta, *recoJetPtPhi;
-TH2 *truthRecX, *truthRecY, *truthRecQ2;
-TH1 *truthBosonCosTheta;
-
 const int nxbins = 41;
 const int nq2bins = 93;
 const int nptbins = 14;
