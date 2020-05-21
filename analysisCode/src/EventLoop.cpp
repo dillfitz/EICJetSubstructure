@@ -63,7 +63,11 @@ int main(int argc, char **argv)
       if(!trueEvent.passCuts()){
 	continue;
       }
+      if (trueEvent.disCharmEvent() == 0) 
+	continue;
 
+      /// This is just to check that the heavy flavor event filters are working 
+      //trueEvent.PrintCharmEvent();
       trueEvent.processEvent();
 
       PseudoJetVec fjtruthR1Jets = trueEvent.getTruthJets(truthcs, R1jetdef);

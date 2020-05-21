@@ -43,6 +43,13 @@ class TruthEvent {
   void setMaxY(double y) {m_maxY = y; }
   void setMinX(double x) {m_minX = x; }
   bool passCuts();
+  bool CharmEvent();
+  bool disCharmEvent();
+  bool pgfCharmEvent();
+  void PrintCharmEvent();
+  PseudoJetVec CharmTagging(PseudoJetVec);
+
+
   TLorentzVector getExchangeBoson();
 
  private:
@@ -63,6 +70,7 @@ class TruthEvent {
 
   void setScatteredLepton();
   void setTruthParticles();
+
 };
 
 

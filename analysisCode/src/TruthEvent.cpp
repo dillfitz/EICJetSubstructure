@@ -5,6 +5,8 @@
 #include <fastjet/contrib/SoftDrop.hh>
 
 #include <iostream>
+#include <algorithm>
+#include <vector>
 
 
 void TruthEvent::processEvent()
@@ -65,15 +67,6 @@ void TruthEvent::setTruthParticles()
 	continue;
       
       const Particle *truthParticle = m_truthEvent->GetTrack(part);
-      /*
-      if (part<11)
-	{
-	   if ( abs(truthParticle->GetPdgCode()) == 4 || abs(truthParticle->GetPdgCode()) == 5  )
-	  // if ( abs(truthParticle->GetPdgCode()) == 5  )
-
-	    cout << "process ID : " << m_truthEvent->GetProcess() << " parton PID : " << truthParticle->GetPdgCode() << endl;
-	}
-      */
       /// only want final state particles
       if(truthParticle->GetStatus() != 1)
 	continue;
@@ -141,7 +134,10 @@ PseudoJetVec TruthEvent::getTruthJets(fastjet::ClusterSequence *cs,
   
   PseudoJetVec selectJets = select(allTruthJets);
 
-  return selectJets;
+  PseudoJetVec charmJets = CharmTagging(selectJets);
+
+  // return selectJets;
+  return charmJets;
 
 }
 
@@ -164,4 +160,177 @@ PseudoJetVec TruthEvent::getTruthSoftDropJets(PseudoJetVec truthJets, SoftDropJe
 
 
 
+bool TruthEvent::CharmEvent()
+{
+  std::vector<int> pids; 
+  for(int part = 0; part < 11; ++part)
+    {    
+      const Particle *truthParticle = m_truthEvent->GetTrack(part);
+      pids.push_back(abs(truthParticle->GetPdgCode()));
+      
+    }
 
+  if ( std::find(pids.begin(), pids.end(), 4) != pids.end() )
+    return true;
+  else 
+    return false;
+  
+}
+
+bool TruthEvent::disCharmEvent()
+{
+  std::vector<int> pids; 
+  if (m_truthEvent->GetProcess() != 99 )
+    return false;
+
+  for(int part = 0; part < 11; ++part)
+    {    
+      const Particle *truthParticle = m_truthEvent->GetTrack(part);
+      pids.push_back(abs(truthParticle->GetPdgCode()));
+      
+    }
+
+  if ( std::find(pids.begin(), pids.end(), 4) != pids.end() )
+    return true;
+  else 
+    return false;
+  
+}
+
+
+bool TruthEvent::pgfCharmEvent()
+{
+  std::vector<int> pids; 
+  if ( (m_truthEvent->GetProcess() != 135 ) &&  (m_truthEvent->GetProcess() != 136 ) )
+    return false;
+
+  for(int part = 0; part < 11; ++part)
+    {    
+      const Particle *truthParticle = m_truthEvent->GetTrack(part);
+      pids.push_back(abs(truthParticle->GetPdgCode()));
+      
+    }
+
+  if ( std::find(pids.begin(), pids.end(), 4) != pids.end() )
+    return true;
+  else 
+    return false;
+  
+}
+
+void TruthEvent::PrintCharmEvent()
+{
+  cout << "Process ID : " << m_truthEvent->GetProcess() << endl;
+  for(int part = 0; part < 11; ++part)
+    {
+      const Particle *truthParticle = m_truthEvent->GetTrack(part);
+      cout << "PID : " << truthParticle->GetPdgCode() << endl;
+    }
+
+}
+
+PseudoJetVec TruthEvent::CharmTagging(PseudoJetVec truthJets)
+{
+  PseudoJetVec charmJets;
+  std::vector<PseudoJet> cons;
+  //std::vector<std::pair<int, int>> parent_ids;
+  std::vector<int> parent_ids;
+
+  for(int jet = 0; jet < truthJets.size(); ++jet)
+    {
+      cons.clear();
+      parent_ids.clear();
+
+      cons = truthJets.at(jet).constituents();
+      if ( m_verbosity == -4 ) 
+	{
+	  cout << "new jet : ";
+	  cout << "num constituents : " << cons.size() << endl;
+	}
+      for (int con = 0; con < cons.size(); ++con)
+	{
+	  PseudoJet constituent;
+	  constituent = cons.at(con);
+	  for (int part = 0; part < m_truthEvent->GetNTracks(); ++part)
+	    {
+	      //cout << cons.size() << endl;
+
+	      /// Skip the beam
+	      if( part < 3 )
+		continue;
+      
+	      const Particle *truthParticle = m_truthEvent->GetTrack(part);
+	      /// only want final state particles
+	      if(truthParticle->GetStatus() != 1)
+		continue;
+
+	      if ( truthParticle->GetPx() == constituent.px() &&
+		  truthParticle->GetPy() == constituent.py() &&
+		  truthParticle->GetPz() == constituent.pz() &&
+		  truthParticle->GetE() == constituent.E() )
+		{
+		  // cout << "We found a match!" << endl;
+		  const Particle *parentPart = m_truthEvent->GetTrack(truthParticle->GetParentIndex());
+		  /*
+		  if ( parentPart->GetNChildren() == 0 )
+		    {
+		      const Particle *grandparentPart= m_truthEvent->GetTrack(parentPart->GetParentIndex());
+		      std::pair<int,int> parent_data(parentPart->GetPdgCode(),
+						     parentPart->GetNChildren());
+
+		      
+		    }
+		  else
+		  */
+
+		  //std::pair<int,int> parent_data(parentPart->GetPdgCode(), parentPart->GetNChildren());
+
+	      parent_ids.push_back(abs(parentPart->GetPdgCode()));
+
+		}
+	      
+	    }
+      
+	}
+
+      if (m_verbosity == -4 )
+	{
+	  
+	  for (int matchedpart=0; matchedpart < parent_ids.size(); ++matchedpart)
+	    cout << parent_ids.at(matchedpart) << endl;
+	  bool check = ((std::find(parent_ids.begin(), parent_ids.end(), 411) != parent_ids.end()) ||
+			(std::find(parent_ids.begin(), parent_ids.end(), 413) != parent_ids.end()) ||
+			(std::find(parent_ids.begin(), parent_ids.end(), 421) != parent_ids.end()) ||
+			(std::find(parent_ids.begin(), parent_ids.end(), 423) != parent_ids.end()) ||
+			(std::find(parent_ids.begin(), parent_ids.end(), 431) != parent_ids.end()) || 
+			(std::find(parent_ids.begin(), parent_ids.end(), 433) != parent_ids.end()) ||
+			(std::find(parent_ids.begin(), parent_ids.end(), 4122)!= parent_ids.end()) ||
+			(std::find(parent_ids.begin(), parent_ids.end(), 4114)!= parent_ids.end()) ||
+			(std::find(parent_ids.begin(), parent_ids.end(), 4214)!= parent_ids.end()) ||
+			(std::find(parent_ids.begin(), parent_ids.end(), 4222)!= parent_ids.end()) || 
+			(std::find(parent_ids.begin(), parent_ids.end(), 4224)!= parent_ids.end()) || 
+			(std::find(parent_ids.begin(), parent_ids.end(), 4132)!= parent_ids.end()) );
+	  cout << "Is it in le list?  "   << check << endl;
+	  	  
+	}
+
+      if  ((std::find(parent_ids.begin(), parent_ids.end(), 411) != parent_ids.end()) ||
+	   (std::find(parent_ids.begin(), parent_ids.end(), 413) != parent_ids.end()) ||
+	   (std::find(parent_ids.begin(), parent_ids.end(), 421) != parent_ids.end()) ||
+	   (std::find(parent_ids.begin(), parent_ids.end(), 423) != parent_ids.end()) ||
+	   (std::find(parent_ids.begin(), parent_ids.end(), 431) != parent_ids.end()) || 
+	   (std::find(parent_ids.begin(), parent_ids.end(), 433) != parent_ids.end()) ||
+	   (std::find(parent_ids.begin(), parent_ids.end(), 4122)!= parent_ids.end()) ||
+	   (std::find(parent_ids.begin(), parent_ids.end(), 4114)!= parent_ids.end()) ||
+	   (std::find(parent_ids.begin(), parent_ids.end(), 4214)!= parent_ids.end()) ||
+	   (std::find(parent_ids.begin(), parent_ids.end(), 4222)!= parent_ids.end()) || 
+	   (std::find(parent_ids.begin(), parent_ids.end(), 4224)!= parent_ids.end()) || 
+	   (std::find(parent_ids.begin(), parent_ids.end(), 4132)!= parent_ids.end()) ) 
+	{
+	  charmJets.push_back(truthJets.at(jet));
+	}
+	
+    }
+
+  return charmJets;
+}

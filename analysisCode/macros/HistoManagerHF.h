@@ -3,111 +3,195 @@
  * the actual source code
  */
 
-TH1 *truthJetPt, *recoJetPt;
-TH2 *matchedJetPt, *matchedJetEta;
-TH1 *truthZ, *truthJt, *truthR;
-TH1 *recoZ, *recoJt, *recoR;
+TH2 *truerecoz, *truerecojt, *truerecor;
+TH2 *recojetpteta, *recojetptphi;
 TH2 *truerecx, *truerecy, *truerecq2;
-TH2 *truthxQ2, *recoxQ2, *truthQ2Pt, *recoQ2Pt, *truthnConstPt, *reconConstPt;
-TH2 *truthJetPtEta, *truthJetPtPhi;
-TH2 *recoJetPtEta, *recoJetPtPhi;
-TH2 *truthRecX, *truthRecY, *truthRecQ2;
-TH1 *truthBosonCosTheta;
+TH2 *trueQ2x, *trueQ2pT;
+TH2 *truejetpteta, *truejetptphi;
+TH2 *recojetptz, *recojetptjt, *recojetptr;
+TH2 *truejetptz, *truejetptjt, *truejetptr;
+TH2 *recojetptetatruejetpt;
+TH2 *recotruejetpt, *recotruejeteta, *recotruejetphi, 
+  *recotruejetp, *recotruejete;
+TH1 *matchedJetDr, *matchedJetdEta, *matchedJetdPhi;
+TH1 *truthRecoConstdPhi, *truthRecoConstdEta, *truthRecoConstdRap;
+TH2 *truthSDjetzg, *truthSDjetrg;
+TH2 *recoSDjetzg, *recoSDjetrg;
+TH2 *truthrecozg, *truthrecorg;
+TH1 *sdenergygroomed;
+TH1 *truenjetevent, *reconjetevent;
+TH1 *truepairmass;
 
-void write(string outf)
+void write(std::string infileName)
 {
-  outfile = new TFile(outf.c_str(),"RECREATE");
-  
-  truthJetPt->Write();
-  recoJetPt->Write();
-  matchedJetPt->Write();
-  matchedJetEta->Write();
-  truthJetPtEta->Write();
-  truthJetPtPhi->Write();
-  recoJetPtEta->Write();
-  recoJetPtPhi->Write();
-  truthnConstPt->Write();
-  reconConstPt->Write();
-  truthQ2Pt->Write();
-  recoQ2Pt->Write();
+  std::string outfileName = "../histos/";
 
-  truthZ->Write();
-  truthJt->Write();
-  truthR->Write();
-  recoZ->Write();
-  recoJt->Write();
-  recoR->Write();
+  if( infileName.find("breit") != string::npos )
+    outfileName += "breitJetHistos";
+  else 
+    outfileName += "labJetHistos";
 
-  truthxQ2->Write();
-  recoxQ2->Write();
-  truthRecX->Write();
-  truthRecY->Write();
-  truthRecQ2->Write();
+  if( infileName.find("275") != string::npos )
+    outfileName += "_pE275_eE18";
+  else if( infileName.find("100") != string::npos )
+    outfileName += "_pE100_eE10";
+
+  if( infileName.find("_oc") != string::npos )
+    outfileName += "_oc";
+  else if( infileName.find("_ob") != string::npos )
+    outfileName += "_ob";
+  else if( infileName.find("_hf") != string::npos )
+    outfileName += "_hf";
+
+ if( infileName.find("_ctag1") != string::npos )
+    outfileName += "_ctag1";
+
+ if( infileName.find("_ctag2") != string::npos )
+    outfileName += "_ctag2";
+
+  outfileName += ".root";
+  outfile = new TFile(outfileName.c_str(),"RECREATE");  
+
+
+  sdenergygroomed->Write();
+  truthSDjetzg->Write();
+  truthSDjetrg->Write();
+  recoSDjetzg->Write();
+  recoSDjetrg->Write();
+  truthrecozg->Write();
+  truthrecorg->Write();
+
+  truerecx->Write();
+  truerecy->Write();
+  truerecq2->Write();
+  trueQ2x->Write();
   
-  truthBosonCosTheta->Write();
+  trueQ2pT->Write();
+  truejetpteta->Write();
+  truejetptphi->Write();
+  recojetptr->Write();
+  recojetptjt->Write();
+  recojetptz->Write();
+  truejetptr->Write();
+  truejetptjt->Write();
+  truejetptz->Write();
+  recojetpteta->Write();
+  recojetptphi->Write();
+  recotruejetpt->Write();
+  recotruejetphi->Write();
+  recotruejeteta->Write();
+  recotruejetp->Write();
+  recotruejete->Write();
+  
+  truerecoz->Write();
+  truerecojt->Write();
+  truerecor->Write();
+  matchedJetDr->Write();
+  matchedJetdPhi->Write();
+  matchedJetdEta->Write();
+  truthRecoConstdPhi->Write();
+  truthRecoConstdEta->Write();
+  truthRecoConstdRap->Write();
+  recojetptetatruejetpt->Write();
+  truenjetevent->Write();
+  reconjetevent->Write();
+  truepairmass->Write();
 
   outfile->Write();
-
   outfile->Close();
 
 }
-
 void instantiateHistos()
 {
-  truthJetPt = new TH1F("truthJetPt","; p_{T} [GeV]; Counts", 40, 0., 20.);
-  truthJetPt->Sumw2();
+  sdenergygroomed = new TH1F("sdenergygroomed",";E_{SD}/E_{AKT}",101,0,1.01);
+  sdenergygroomed->Sumw2();
 
-  recoJetPt = new TH1F("recoJetPt","; p_{T} [GeV]; Counts", 40, 0., 20.);
-  recoJetPt->Sumw2();
+  truthrecozg = new TH2F("truthrecozg",";z_{g}^{true}; z_{g}^{reco}",
+			 nzgbins, zgbins, nzgbins, zgbins);
+  truthrecorg = new TH2F("truthrecorg",";R_{g}^{true}; R_{g}^{reco}",
+			 nrbins, rbins, nrbins, rbins);
+  truthSDjetzg = new TH2F("truthSDjetzg",
+			  ";z_{g}^{true};p_{T}^{Soft Drop, true} [GeV]",
+			  nzgbins,zgbins, nptbins, ptbins);
+  truthSDjetrg = new TH2F("truthSDjetrg",
+			  ";R_{g}^{true};p_{T}^{Soft Drop, true} [GeV]",
+			  nrbins,rbins,nptbins,ptbins);
+  recoSDjetzg = new TH2F("recoSDjetzg",
+			  ";z_{g}^{reco};p_{T}^{Soft Drop, reco} [GeV]",
+			  nzgbins,zgbins, nptbins, ptbins);
+  recoSDjetrg = new TH2F("recoSDjetrg",
+			  ";R_{g}^{reco};p_{T}^{Soft Drop, reco} [GeV]",
+			  nrbins,rbins,nptbins,ptbins);
 
-  matchedJetPt = new TH2F("matchedJetPt","; true p_{T} [GeV]; reco p_{T} [GeV]", 40, 0., 20., 40, 0., 20.);
 
-  matchedJetEta = new TH2F("matchedJetEta","; true #eta; reco #eta", 40, -4., 4., 40, -4., 4.);
 
-  truthZ = new TH1F("truthZ","; z; Counts", 40, 0., 1.);
-  truthZ->Sumw2();
+  truerecx = new TH2F("truerecx",";x_{true}; x_{rec}",nxbins, xbins, 
+		      nxbins, xbins);
+  truerecy = new TH2F("truerecy",";y_{true}; y_{rec}",100,0,1,100,0,1);
+  truerecq2 = new TH2F("truerecq2",
+		       ";Q^{2}_{true} [GeV^{2}]; Q^{2}_{reco} [GeV^{2}]",
+		       nq2bins,qbins,nq2bins,qbins);
+  trueQ2x = new TH2F("trueq2x",";x_{true};Q^{2}_{true} [GeV^{2}]",
+		     nxbins,xbins,nq2bins,qbins);
+  
+  trueQ2pT = new TH2F("trueq2pt",";Q_{true}^{2} [GeV^{2}]; p_{T}^{true} [GeV]",
+		      nq2bins,qbins,nptbins,ptbins);
+  truejetpteta = new TH2F("truejetpteta",";p_{T}^{true} [GeV]; #eta",
+			  30,4,34,50,-3,3);
+  truejetptphi = new TH2F("truejetptphi",";p_{T}^{true} [GeV]; #phi [rad]",
+			  30,4,34,50,-3.14159,3.14159);
+  recojetptz = new TH2F("recojetptz",";z_{reco};p_{T}^{jet,reco} [GeV]",
+			nzbins,zbins,nptbins,ptbins);
+  recojetptjt = new TH2F("recojetptjt",
+			 ";j_{T}^{reco} [GeV]; p_{T}^{jet,reco} [GeV]",
+			 njtbins,jtbins,nptbins,ptbins);
+  recojetptr = new TH2F("recojetptr",";r_{reco}; p_{T}^{jet,reco} [GeV]",
+			nrbins,rbins,nptbins,ptbins);
+  truejetptz = new TH2F("truejetptz",";z_{true};p_{T}^{jet,true} [GeV]",
+			nzbins,zbins,nptbins,ptbins);
+  truejetptjt = new TH2F("truejetptjt",
+			 ";j_{T}^{true} [GeV]; p_{T}^{jet,true} [GeV]",
+			 njtbins,jtbins,nptbins,ptbins);
+  truejetptr = new TH2F("truejetptr",";r_{true}; p_{T}^{jet,true} [GeV]",
+			nrbins,rbins,nptbins,ptbins);
+  recojetpteta = new TH2F("recojetpteta", ";p_{T}^{jet,reco} [GeV]; #eta",
+			  30,4,34,50,-3,3);
+  recojetptphi = new TH2F("recojetptphi",";p_{T}^{jet,reco} [GeV]; #phi",
+			  30,4,34,50,-3.14159,3.14159);
+  recotruejetpt = new TH2F("recotruejetpt",";p_{T}^{jet,true} [GeV]; p_{T}^{jet,reco} [GeV]",
+			   nptbins, ptbins, nptbins, ptbins);
+  recotruejetphi = new TH2F("recotruejetphi",";#phi_{true} [rad];#phi_{reco} [rad]",
+			    200, -3.14159,3.14159, 200,-3.14159, 3.14159);
+  recotruejeteta = new TH2F("recotruejeteta",";#eta_{true}; #eta_{reco}",
+			    200,-3,3, 200,-3,3);
+  recotruejetp = new TH2F("recotruejetp",";p^{jet,true} [GeV];p^{jet,reco} [GeV]", npbins, pbins, npbins, pbins);
+  recotruejete = new TH2F("recotruejete",";E^{jet,true} [GeV]; E^{jet,reco} [GeV]", npbins, pbins, npbins, pbins);
 
-  truthJt = new TH1F("truthJt","; j_{T}; Counts", 40, 0., 1.);
-  truthJt->Sumw2();
+  truerecoz = new TH2F("truerecoz",";z_{true};z_{reco}",nzbins,zbins,nzbins,zbins);
+  truerecojt = new TH2F("truerecojt",";j_{T}^{true} [GeV];j_{T}^{reco} [GeV]",njtbins,jtbins,njtbins,jtbins);
+  truerecor = new TH2F("truerecor",";r_{true}; r_{reco}",nrbins,rbins,nrbins,rbins);
 
-  truthR = new TH1F("truthR","; r; Counts", 40, 0., 1.);
-  truthR->Sumw2();
+  matchedJetDr = new TH1F("matchedJetDr",";#DeltaR(true,reco)",100,0,1.1);
+  matchedJetDr->Sumw2();
 
-  recoZ = new TH1F("recoZ","; z; Counts", 40, 0., 1.);
-  recoZ->Sumw2();
+  matchedJetdEta = new TH1F("matchedJetdEta",";#Delta#eta(true,reco)",100,-0.5,0.5);
+  matchedJetdEta->Sumw2();
 
-  recoJt = new TH1F("recoJt","; j_{T}; Counts", 40, 0., 1.);
-  recoJt->Sumw2();
+  matchedJetdPhi = new TH1F("matchedJetdPhi",";#Delta#phi(true,reco) [rad]",100,-0.5,0.5);
+  matchedJetdPhi->Sumw2();
 
-  recoR = new TH1F("recoR","; r; Counts", 40, 0., 1.);
-  recoR->Sumw2();
+  truthRecoConstdPhi = new TH1F("truthRecoConstdPhi",";#Delta#phi(true_{const},reco_{const}) [rad]", 100,-0.5,0.5);
 
-  truthJetPtEta = new TH2F("truthJetPtEta",";p_{T}^{true} [GeV]; #eta",20,4,24,50,-3,3);
+  truthRecoConstdEta = new TH1F("truthRecoConstdEta",";#Delta#eta(true_{const}, reco_{const})",100,-0.5,0.5);
 
-  truthJetPtPhi = new TH2F("truthJetPtPhi",";p_{T}^{true} [GeV]; #phi [rad]",20,4,24,50,-3.14159,3.14159);
+  truthRecoConstdRap = new TH1F("truthRecoConstdRap",";#Deltay(true_{const}, reco_{const})",100,-0.5,0.5);
 
-  recoJetPtEta = new TH2F("recoJetPtEta",";p_{T}^{rec} [GeV]; #eta",20,4,24,50,-3,3);
+  recojetptetatruejetpt = new TH2F("recojetptetatruejetpt",";p_{T}^{jet,true} [GeV]; #eta^{jet,true}",30,4,34,50,-3,3);
 
-  recoJetPtPhi = new TH2F("recoJetPtPhi",";p_{T}^{rec} [GeV]; #phi [rad]",20,4,24,50,-3.14159,3.14159);
-  truthnConstPt = new TH2F("truthNConstPt","; N constituents; p_{T} [GeV]", 40, 0., 40., 40, 0., 20.);
+  truenjetevent = new TH1I("truenjetevent", "; N^{jet, true}; Counts", 10, 0, 10);
 
-  reconConstPt = new TH2F("recoNConstPt","; N constituents; p_{T} [GeV]", 40, 0., 40., 40, 0., 20.);
+  reconjetevent = new TH1I("reconjetevent", "; N^{jet, true}; Counts", 10, 0, 10);
 
-  truthQ2Pt = new TH2F("truthQ2Pt", "; Q^[2} [GeV^{2}]; p_{T} [GeV]", 40, 0., 1000., 40, 0., 20.);
-
-  recoQ2Pt = new TH2F("recoQ2Pt", "; Q^{2} [GeV^{2}]; p_{T} [GeV]", 40, 0., 1000., 40, 0., 20.);
-
-  truthxQ2 = new TH2F("truthxQ2", "; x; Q^{2} [GeV^{2}]", 40, 0., 1., 40, 0., 1000.);
-
-  recoxQ2 = new TH2F("recoxQ2", "; x; Q^{2} [GeV^{2}]", 40, 0., 1., 40, 0., 1000.);
-
-  truthBosonCosTheta = new TH1F("bosonCosTheta","; cos#theta; Counts", 40, -2., 2.);
-  truthBosonCosTheta->Sumw2();
-
-  truthRecX = new TH2F("truthRecX",";x_{true}; x_{rec}",nxbins, xbins, nxbins, xbins);
-
-  truthRecY = new TH2F("truthRecY",";y_{true}; y_{rec}",100,0,1,100,0,1);
-
-  truthRecQ2 = new TH2F("truthRecQ2",";Q^{2}_{true} [GeV^{2}]; Q^{2}_{reco} [GeV^{2}]",nq2bins,qbins,nq2bins,qbins);
+  truepairmass = new TH1F("truepairmass", ";M_{pair} [GeV]; ", 44, 1.3, 2.5);
 
 }
