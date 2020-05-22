@@ -313,7 +313,7 @@ PseudoJetVec TruthEvent::CharmTagging(PseudoJetVec truthJets)
 	  cout << "Is it in le list?  "   << check << endl;
 	  	  
 	}
-
+      
       if  ((std::find(parent_ids.begin(), parent_ids.end(), 411) != parent_ids.end()) ||
 	   (std::find(parent_ids.begin(), parent_ids.end(), 413) != parent_ids.end()) ||
 	   (std::find(parent_ids.begin(), parent_ids.end(), 421) != parent_ids.end()) ||
@@ -329,7 +329,14 @@ PseudoJetVec TruthEvent::CharmTagging(PseudoJetVec truthJets)
 	{
 	  charmJets.push_back(truthJets.at(jet));
 	}
-	
+      
+      /*
+      // Lets just tag D0s since we can readily reconstruct these
+      if  (std::find(parent_ids.begin(), parent_ids.end(), 421) != parent_ids.end())
+	{
+	  charmJets.push_back(truthJets.at(jet));
+	}
+      */
     }
 
   return charmJets;

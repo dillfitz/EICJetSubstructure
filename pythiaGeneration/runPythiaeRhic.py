@@ -25,7 +25,7 @@ def runPythia(outfile, protonEnergy, electronEnergy, minQ2, nEvents, basePath):
     """
 
     # get the default pythia parameters that we don't want to fuss with
-    defaultPythiaFile = open(basePath + "pythiaGeneration/pythiaeRHICSettingsHera_oc.txt", "r")
+    defaultPythiaFile = open(basePath + "pythiaGeneration/pythiaeRHICSettingsHera.txt", "r")
     defaultPythia = defaultPythiaFile.read()
     
     # construct the header with the arguments 

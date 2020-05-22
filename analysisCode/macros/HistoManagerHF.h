@@ -20,7 +20,7 @@ TH2 *recoSDjetzg, *recoSDjetrg;
 TH2 *truthrecozg, *truthrecorg;
 TH1 *sdenergygroomed;
 TH1 *truenjetevent, *reconjetevent;
-TH1 *truepairmass;
+TH1 *truepairmass, *truethreebodymass;
 
 void write(std::string infileName)
 {
@@ -48,6 +48,12 @@ void write(std::string infileName)
 
  if( infileName.find("_ctag2") != string::npos )
     outfileName += "_ctag2";
+
+ if( infileName.find("_d0tag1") != string::npos )
+    outfileName += "_d0tag1";
+
+ if( infileName.find("_d0tag2") != string::npos )
+    outfileName += "_d0tag2";
 
   outfileName += ".root";
   outfile = new TFile(outfileName.c_str(),"RECREATE");  
@@ -96,6 +102,7 @@ void write(std::string infileName)
   truenjetevent->Write();
   reconjetevent->Write();
   truepairmass->Write();
+  truethreebodymass->Write();
 
   outfile->Write();
   outfile->Close();
@@ -192,6 +199,9 @@ void instantiateHistos()
 
   reconjetevent = new TH1I("reconjetevent", "; N^{jet, true}; Counts", 10, 0, 10);
 
-  truepairmass = new TH1F("truepairmass", ";M_{pair} [GeV]; ", 44, 1.3, 2.5);
+  truepairmass = new TH1F("truepairmass", ";M_{pair} [GeV]; ", 600, 1.8, 2.4);
+
+  truethreebodymass = new TH1F("truethreebodymass", ";M_{pair} [GeV]; ", 600, 1.8, 2.4);
+
 
 }
