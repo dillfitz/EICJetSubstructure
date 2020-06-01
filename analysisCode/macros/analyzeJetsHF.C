@@ -1,4 +1,3 @@
-
 #include "analyzeJetsHF.h"
 #include "HistoManagerHF.h"
 const float pion_mass = 0.13957;
@@ -29,10 +28,10 @@ void recoJetAnalysis(JetConstVec *recojets)
       jetVec = recojets->at(jet).first;
 
       float jetpt = jetVec.Pt();
-      if(jetpt < minjetpt )
-	continue;
-      if(fabs(jetVec.Eta()) > maxjeteta)
-	continue;
+      //if(jetpt < minjetpt )
+      //continue;
+      //if(fabs(jetVec.Eta()) > maxjeteta)
+      //continue;
 
       recojetpteta->Fill(jetpt, jetVec.Eta());
       recojetptphi->Fill(jetpt, jetVec.Phi());
@@ -70,11 +69,11 @@ double truthJetAnalysis(JetConstVec *truthjets)
       jetVec = truthJets->at(jet).first;
       if(jetVec.Pt() > jetpt)
 	jetpt = jetVec.Pt();
-      
-      if(jetVec.Pt() < minjetpt)
-	continue;
-      if(fabs(jetVec.Eta()) > maxjeteta)
-	continue;
+       
+      // if(jetVec.Pt() < minjetpt)
+      //continue;
+      //if(fabs(jetVec.Eta()) > maxjeteta)
+      //continue;
       
       truejetptphi->Fill(jetVec.Pt(), jetVec.Phi());
       truejetpteta->Fill(jetVec.Pt(), jetVec.Eta());
@@ -96,9 +95,10 @@ double truthJetAnalysis(JetConstVec *truthjets)
 	  truejetptz->Fill(z1, jetpt);
 	  truejetptjt->Fill(jt, jetpt);
 	  truejetptr->Fill(r, jetpt);
-
+	  constmass->Fill(con1.M());
+	  
 	  /// Pair mass calulation for HF tagging
-	  for(int k = 0; k < truthjets->at(jet).second.size(); ++k)
+	  /*  for(int k = 0; k < truthjets->at(jet).second.size(); ++k)
 	    {
 	      if (k != j)
 		{
@@ -144,7 +144,7 @@ double truthJetAnalysis(JetConstVec *truthjets)
 		      // }
 		    }		
 		}	      
-	    }
+	    }*/
 	} 
     }  
 
@@ -212,8 +212,8 @@ void analyzeMatchedJets(MatchedJets *matchedjets,
       TLorentzVectorVec truthConst = truthJetConst.second;
       TLorentzVectorVec recoConst = recoJetConst.second;
 
-      if(truthJet.Pt() < minjetpt || fabs(truthJet.Eta()) > maxjeteta)
-	continue;
+      //  if(truthJet.Pt() < minjetpt || fabs(truthJet.Eta()) > maxjeteta)
+      //continue;
       if(recoJet.Pt() >minjetpt && fabs(recoJet.Eta()) < maxjeteta)
 	{
 	  recojetptetatruejetpt->Fill(truthJet.Pt(), truthJet.Eta());

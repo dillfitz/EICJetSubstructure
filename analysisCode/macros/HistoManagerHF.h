@@ -20,7 +20,7 @@ TH2 *recoSDjetzg, *recoSDjetrg;
 TH2 *truthrecozg, *truthrecorg;
 TH1 *sdenergygroomed;
 TH1 *truenjetevent, *reconjetevent;
-TH1 *truepairmass, *truethreebodymass;
+TH1 *constmass, *truepairmass, *truethreebodymass;
 
 void write(std::string infileName)
 {
@@ -36,24 +36,14 @@ void write(std::string infileName)
   else if( infileName.find("100") != string::npos )
     outfileName += "_pE100_eE10";
 
-  if( infileName.find("_oc") != string::npos )
-    outfileName += "_oc";
-  else if( infileName.find("_ob") != string::npos )
-    outfileName += "_ob";
-  else if( infileName.find("_hf") != string::npos )
-    outfileName += "_hf";
+ if( infileName.find("_d0") != string::npos )
+    outfileName += "_d0";
 
- if( infileName.find("_ctag1") != string::npos )
-    outfileName += "_ctag1";
+ if( infileName.find("_1") != string::npos )
+    outfileName += "_1";
 
- if( infileName.find("_ctag2") != string::npos )
-    outfileName += "_ctag2";
-
- if( infileName.find("_d0tag1") != string::npos )
-    outfileName += "_d0tag1";
-
- if( infileName.find("_d0tag2") != string::npos )
-    outfileName += "_d0tag2";
+ if( infileName.find("_2") != string::npos )
+    outfileName += "_2";
 
   outfileName += ".root";
   outfile = new TFile(outfileName.c_str(),"RECREATE");  
@@ -101,8 +91,9 @@ void write(std::string infileName)
   recojetptetatruejetpt->Write();
   truenjetevent->Write();
   reconjetevent->Write();
-  truepairmass->Write();
-  truethreebodymass->Write();
+  constmass->Write();
+  //truepairmass->Write();
+  //truethreebodymass->Write();
 
   outfile->Write();
   outfile->Close();
@@ -199,7 +190,9 @@ void instantiateHistos()
 
   reconjetevent = new TH1I("reconjetevent", "; N^{jet, true}; Counts", 10, 0, 10);
 
-  truepairmass = new TH1F("truepairmass", ";M_{pair} [GeV]; ", 600, 1.8, 2.4);
+  constmass = new TH1F("constmass", ";M_{con} [GeV]; ", 40, 1, 3.);
+
+  truepairmass = new TH1F("truepairmass", ";M_{pair} [GeV]; ", 40, 1, 3.);
 
   truethreebodymass = new TH1F("truethreebodymass", ";M_{pair} [GeV]; ", 600, 1.8, 2.4);
 

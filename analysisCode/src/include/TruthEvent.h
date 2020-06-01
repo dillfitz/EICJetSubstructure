@@ -46,6 +46,7 @@ class TruthEvent {
   bool CharmEvent();
   bool disCharmEvent();
   bool pgfCharmEvent();
+  bool disD0toStableEvent();
   void PrintCharmEvent();
   PseudoJetVec CharmTagging(PseudoJetVec);
 

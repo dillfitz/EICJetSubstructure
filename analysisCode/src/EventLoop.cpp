@@ -39,6 +39,7 @@ int main(int argc, char **argv)
 
   std::cout<<"begin event loop"<<std::endl;
   for(int event = 0; event < mctree->GetEntries(); ++event)
+  //for(int event = 0; event < 5000; ++event)
     {
       if(event % 20000 == 0)
 	std::cout<<"Processed " << event << " events" << std::endl;
@@ -63,7 +64,11 @@ int main(int argc, char **argv)
       if(!trueEvent.passCuts()){
 	continue;
       }
+
       if (trueEvent.disCharmEvent() == 0) 
+	continue;
+
+      if (trueEvent.disD0toStableEvent() == 0) 
 	continue;
 
       /// This is just to check that the heavy flavor event filters are working 
