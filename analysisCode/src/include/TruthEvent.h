@@ -47,8 +47,10 @@ class TruthEvent {
   bool disCharmEvent();
   bool pgfCharmEvent();
   bool disD0toStableEvent();
+  bool CharmDecayFilter( const Particle *part );
+  void CharmDecayTagger( const Particle *part, vector<int> &childIndices );
   void PrintCharmEvent();
-  PseudoJetVec CharmTagging(PseudoJetVec);
+  PseudoJetVec CharmJetTagging(PseudoJetVec);
 
 
   TLorentzVector getExchangeBoson();

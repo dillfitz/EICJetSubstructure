@@ -64,11 +64,7 @@ void TruthEvent::setTruthParticles()
 
   BreitFrame breit(*m_truthEvent);
   int chadIndex = -99;
-  int childMax = -99;
-  int childMin = -99;
-  vector<int> grandChildMax, greatGrandChildMax;
-  vector<int> grandChildMin, greatGrandChildMin;
-  bool cascade = 0;
+  vector<int> chadChildIndices;
   for(int part = 0; part < m_truthEvent->GetNTracks(); ++part)
     {
 
@@ -86,81 +82,15 @@ void TruthEvent::setTruthParticles()
 	    {
 	 
 	      const Particle *chad = m_truthEvent->GetTrack(child);
- 
 	      //cout << "PIDs from hard scattered c quark... " << chad->GetPdgCode() << endl;
 	      int chadPid = abs(chad->GetPdgCode());
 	      if (chadPid == 421)
 		{
 		  chadIndex = chad->GetIndex();
-		  childMin = chad->GetChild1Index();
-		  childMax = chad->GetChildNIndex();
-		  int counter = 0;
-
-		  for (int gchild = chad->GetChild1Index() - 1; gchild < chad->GetChildNIndex(); ++gchild)
-		    {
-
-		      const Particle *chadChild = m_truthEvent->GetTrack(gchild);
-		      //cout << "flagged... chad child pid : " << chadChild->GetPdgCode() <<  endl;
-
-		      if (chadChild->GetStatus() != 1)
-			{
-			  counter++;			
-			  grandChildMin.push_back(chadChild->GetChild1Index());
-			  grandChildMax.push_back(chadChild->GetChildNIndex());	
-
-			  for (int ggchild = chadChild->GetChild1Index() - 1; ggchild < chadChild->GetChildNIndex(); ++ggchild)
-			    {			      
-			      const Particle *chadGrandChild = m_truthEvent->GetTrack(ggchild);
-			      if (chadGrandChild->GetStatus() != 1)
-				{
-				  greatGrandChildMin.push_back(chadChild->GetChild1Index());
-				  greatGrandChildMax.push_back(chadChild->GetChildNIndex());	
-				  for (int gggchild = chadGrandChild->GetChild1Index() - 1; gggchild < chadGrandChild->GetChildNIndex(); ++gggchild)
-				    {	
-				      const Particle *chadGreatGrandChild = m_truthEvent->GetTrack(gggchild);
-				      if (chadGreatGrandChild->GetStatus() != 1)
-					{
-				  
-					}
-
-				      else
-					{
-					  if (m_verbosity == -4 )
-					    std::cout << "Charm Great Grand Children: " <<chadGreatGrandChild->Id() 
-						      << " " <<chadGreatGrandChild->GetPx() << " " 
-						      << chadGreatGrandChild->GetPy() << " " << truthParticle->GetPz()
-						      << " " << chadGreatGrandChild->GetE()  
-						      << " " << chadGreatGrandChild->GetIndex() << std::endl;
-					}
-				    }		    		  				  
-				}
-			     
-			      else
-				{
-				  if (m_verbosity == -4 )
-				    std::cout << "Charm Grand Children: " <<chadGrandChild->Id() 
-					      << " " <<chadGrandChild->GetPx() << " " 
-					      << chadGrandChild->GetPy() << " " << truthParticle->GetPz()
-					      << " " << chadGrandChild->GetE()  
-					      << " " << chadGrandChild->GetIndex() << std::endl;
-				}
-			    }		    		  
-			}
-
-		      else
-			{
-			  if (m_verbosity == -4 )
-			    std::cout << "Charm Children: " <<chadChild->Id() 
-				      << " " <<chadChild->GetPx() << " " 
-				      << chadChild->GetPy() << " " << truthParticle->GetPz()
-				      << " " << chadChild->GetE()
-				      << " " << chadChild->GetIndex() << std::endl;
-			}
-		    }			
+		  CharmDecayTagger( chad, chadChildIndices );	  
 		}
 	    }
 	}
-
 
       // Aside from the charm hadron, we only want final state particles
       if(truthParticle->GetStatus() != 1 && truthParticle->GetIndex() != chadIndex)
@@ -175,29 +105,15 @@ void TruthEvent::setTruthParticles()
 	continue;
       if(truthParticle->GetPt() < 0.25)
 	continue;
-      /*
-       std::cout << "Truth (before removing children) : " <<truthParticle->Id() 
-		 << " " <<truthParticle->GetPx() << " " 
-		 << truthParticle->GetPy() << " " << truthParticle->GetPz()
-		 << " " << truthParticle->GetE() << std::endl;
-      */
-      if(truthParticle->GetIndex()>= childMin && truthParticle->GetIndex() <= childMax)
-	continue;
 
-      bool gchildren = false;
-      bool ggchildren = false;
-      for (int i = 0; i<grandChildMin.size(); ++i)
+      bool chadChildren = false;
+      for (int i = 0; i<chadChildIndices.size(); ++i)
       {
-        if(truthParticle->GetIndex()>= grandChildMin.at(i) && truthParticle->GetIndex() <= grandChildMax.at(i))
-          gchildren = true;      
+        if( truthParticle->GetIndex() == chadChildIndices.at(i) )
+          chadChildren = true;      
       }
-      for (int i = 0; i<greatGrandChildMin.size(); ++i)
-      {
-        if(truthParticle->GetIndex()>= greatGrandChildMin.at(i) && truthParticle->GetIndex() <= greatGrandChildMax.at(i))
-          ggchildren = true;      
-      }
-
-      if (gchildren || ggchildren)
+     
+      if ( chadChildren )
 	continue;
 
       if(m_verbosity == -4)
@@ -254,7 +170,7 @@ PseudoJetVec TruthEvent::getTruthJets(fastjet::ClusterSequence *cs,
   
   PseudoJetVec selectJets = select(allTruthJets);
 
-  PseudoJetVec charmJets = CharmTagging(selectJets);
+  PseudoJetVec charmJets = CharmJetTagging(selectJets);
 
   // return selectJets;
   return charmJets;
@@ -279,7 +195,6 @@ PseudoJetVec TruthEvent::getTruthSoftDropJets(PseudoJetVec truthJets, SoftDropJe
 }
 
 
-
 bool TruthEvent::CharmEvent()
 {
   std::vector<int> pids; 
@@ -296,6 +211,7 @@ bool TruthEvent::CharmEvent()
     return false;
   
 }
+
 
 bool TruthEvent::disCharmEvent()
 {
@@ -340,9 +256,6 @@ bool TruthEvent::pgfCharmEvent()
 
 bool TruthEvent::disD0toStableEvent()
 {
-  bool d0 = false;
-  bool doubleCascade = false;
-  std::vector<int> pids; 
   if (m_truthEvent->GetProcess() != 99 )
     return false;
 
@@ -359,61 +272,24 @@ bool TruthEvent::disD0toStableEvent()
 	      const Particle *chad = m_truthEvent->GetTrack(child);
  
 	      //cout << "PID TEST... " << chad->GetPdgCode() << endl;
+
 	      int chadPid = abs(chad->GetPdgCode());
 	      if (chadPid == 421)
 		{
-		  d0 = true;
-		  for (int gchild = chad->GetChild1Index() - 1; gchild < chad->GetChildNIndex(); ++gchild)
-		    {
-		      const Particle *chadChild = m_truthEvent->GetTrack(gchild);		      
-		      if (chadChild->GetStatus() != 1)
-			{
-			  //cout << "flagged cascade1 .. " << endl;			  
-			  for (int ggchild = chadChild->GetChild1Index() - 1; ggchild < chadChild->GetChildNIndex(); ++ggchild)
-			    {
-			      const Particle *chadGrandChild = m_truthEvent->GetTrack(ggchild);
-			      if (chadGrandChild->GetStatus() != 1)
-				{
-				  //cout << "flagged... double cascasde  " << endl;
-				  for (int gggchild = chadGrandChild->GetChild1Index() - 1; gggchild < chadGrandChild->GetChildNIndex(); ++gggchild)
-				    {
-				      const Particle *chadGreatGrandChild = m_truthEvent->GetTrack(gggchild);
-				      if (chadGreatGrandChild->GetStatus() != 1)
-					{
-					  //cout << "flagged... triple cascasde  " << endl;
-					  return false;
-					}
-				      else 	
-					{
-					  if(fabs(chadGreatGrandChild->GetEta())> 3.5 && chadGrandChild->GetPt() < 0.25)
-					    return false;
-					}
-				    }	
-				}
-			      else 	
-				{
-				  if(fabs(chadGrandChild->GetEta())> 3.5 && chadGrandChild->GetPt() < 0.25)
-				    return false;
-				}
-			    }
-			}
+		  bool passedCharmChildCuts;
+		  passedCharmChildCuts = CharmDecayFilter( chad );
 
-		      else
-			{
-			  if(fabs(chadChild->GetEta())> 3.5 && chadChild->GetPt() < 0.25)
-			    return false;		
-			}
-		    }			
+		  if (!passedCharmChildCuts )
+		    return false;
+		  else
+		    return true;
+			
 		}
 	    }
 	}
     }
 
-  if (d0)
-    return true;
-  else 
-    return false;
-  
+    return false;  
 }
 
 void TruthEvent::PrintCharmEvent()
@@ -425,105 +301,57 @@ void TruthEvent::PrintCharmEvent()
       cout << "PID : " << truthParticle->GetPdgCode() << endl;
     }
 
+  return;
 }
 
-/*
-PseudoJetVec TruthEvent::CharmTagging_old(PseudoJetVec truthJets)
+bool TruthEvent::CharmDecayFilter( const Particle *part )
 {
-  PseudoJetVec charmJets;
-  std::vector<PseudoJet> cons;
-  //std::vector<std::pair<int, int>> parent_ids;
-  std::vector<int> parent_ids;
 
-  for(int jet = 0; jet < truthJets.size(); ++jet)
+  for (int childIndex = part->GetChild1Index() - 1; childIndex < part->GetChildNIndex(); ++childIndex)
     {
-      cons.clear();
-      parent_ids.clear();
-
-      cons = truthJets.at(jet).constituents();
-      if ( m_verbosity == -4 ) 
-	{
-	  cout << "new jet : ";
-	  cout << "num constituents : " << cons.size() << endl;
-	}
-      for (int con = 0; con < cons.size(); ++con)
-	{
-	  PseudoJet constituent;
-	  constituent = cons.at(con);
-	  for (int part = 0; part < m_truthEvent->GetNTracks(); ++part)
-	    {
-	      //cout << cons.size() << endl;
-
-	      /// Skip the beam
-	      if( part < 3 )
-		continue;
-      
-	      const Particle *truthParticle = m_truthEvent->GetTrack(part);
-	      /// only want final state particles
-	      if(truthParticle->GetStatus() != 1)
-		continue;
-
-	      if ( truthParticle->GetPx() == constituent.px() &&
-		  truthParticle->GetPy() == constituent.py() &&
-		  truthParticle->GetPz() == constituent.pz() &&
-		  truthParticle->GetE() == constituent.E() )
-		{
-		  // cout << "We found a match!" << endl;
-		  const Particle *parentPart = m_truthEvent->GetTrack(truthParticle->GetParentIndex());
-       
-
-		  //std::pair<int,int> parent_data(parentPart->GetPdgCode(), parentPart->GetNChildren());
-
-	      parent_ids.push_back(abs(parentPart->GetPdgCode()));
-
-		}
-	      
-	    }
-      
-	}
-
-      if (m_verbosity == -4 )
+      const Particle *child = m_truthEvent->GetTrack(childIndex);		      
+      if (child->GetStatus() != 1)
 	{
 	  
-	  for (int matchedpart=0; matchedpart < parent_ids.size(); ++matchedpart)
-	    cout << parent_ids.at(matchedpart) << endl;
-	  bool check = ((std::find(parent_ids.begin(), parent_ids.end(), 411) != parent_ids.end()) ||
-			(std::find(parent_ids.begin(), parent_ids.end(), 413) != parent_ids.end()) ||
-			(std::find(parent_ids.begin(), parent_ids.end(), 421) != parent_ids.end()) ||
-			(std::find(parent_ids.begin(), parent_ids.end(), 423) != parent_ids.end()) ||
-			(std::find(parent_ids.begin(), parent_ids.end(), 431) != parent_ids.end()) || 
-			(std::find(parent_ids.begin(), parent_ids.end(), 433) != parent_ids.end()) ||
-			(std::find(parent_ids.begin(), parent_ids.end(), 4122)!= parent_ids.end()) ||
-			(std::find(parent_ids.begin(), parent_ids.end(), 4114)!= parent_ids.end()) ||
-			(std::find(parent_ids.begin(), parent_ids.end(), 4214)!= parent_ids.end()) ||
-			(std::find(parent_ids.begin(), parent_ids.end(), 4222)!= parent_ids.end()) || 
-			(std::find(parent_ids.begin(), parent_ids.end(), 4224)!= parent_ids.end()) || 
-			(std::find(parent_ids.begin(), parent_ids.end(), 4132)!= parent_ids.end()) );
-	  cout << "Is it in le list?  "   << check << endl;
-	  	  
+	  CharmDecayFilter( child ); 
 	}
       
-      if  ((std::find(parent_ids.begin(), parent_ids.end(), 411) != parent_ids.end()) ||
-	   (std::find(parent_ids.begin(), parent_ids.end(), 413) != parent_ids.end()) ||
-	   (std::find(parent_ids.begin(), parent_ids.end(), 421) != parent_ids.end()) ||
-	   (std::find(parent_ids.begin(), parent_ids.end(), 423) != parent_ids.end()) ||
-	   (std::find(parent_ids.begin(), parent_ids.end(), 431) != parent_ids.end()) || 
-	   (std::find(parent_ids.begin(), parent_ids.end(), 433) != parent_ids.end()) ||
-	   (std::find(parent_ids.begin(), parent_ids.end(), 4122)!= parent_ids.end()) ||
-	   (std::find(parent_ids.begin(), parent_ids.end(), 4114)!= parent_ids.end()) ||
-	   (std::find(parent_ids.begin(), parent_ids.end(), 4214)!= parent_ids.end()) ||
-	   (std::find(parent_ids.begin(), parent_ids.end(), 4222)!= parent_ids.end()) || 
-	   (std::find(parent_ids.begin(), parent_ids.end(), 4224)!= parent_ids.end()) || 
-	   (std::find(parent_ids.begin(), parent_ids.end(), 4132)!= parent_ids.end()) ) 
+      else
 	{
-	  charmJets.push_back(truthJets.at(jet));
-	}            
+	  if(fabs(child->GetEta()) > 3.5 && child->GetPt() < 0.25)
+	    return false;	
+	}
     }
 
-  return charmJets;
-}
-*/
-PseudoJetVec TruthEvent::CharmTagging(PseudoJetVec truthJets)
+  return true;
+} 
+
+void TruthEvent::CharmDecayTagger( const Particle *part, vector<int> &childIndices )
+{
+  for (int childIndex = part->GetChild1Index() - 1; childIndex < part->GetChildNIndex(); ++childIndex)
+    {
+      const Particle *child = m_truthEvent->GetTrack(childIndex);		      
+      if (child->GetStatus() != 1)
+	{	  
+	  CharmDecayTagger( child, childIndices ); 
+	}
+      else
+	{
+	  childIndices.push_back( child->GetIndex() );
+
+	  if (m_verbosity == -4 )
+	    std::cout << "Charm Stable Child: " <<child->Id() 
+		      << " " <<child->GetPx() << " " 
+		      << child->GetPy() << " " << child->GetPz()
+		      << " " << child->GetE()  
+		      << " " << child->GetIndex() << std::endl;
+	}
+    }
+
+  return;
+} 
+
+PseudoJetVec TruthEvent::CharmJetTagging(PseudoJetVec truthJets)
 {
   PseudoJetVec charmJets;
   std::vector<PseudoJet> cons;
