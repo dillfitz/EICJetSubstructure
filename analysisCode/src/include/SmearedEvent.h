@@ -24,10 +24,11 @@ class SmearedEvent {
   
  public:
   SmearedEvent(){}
-  SmearedEvent(erhic::EventPythia &truthEvent, Smear::Event &smearEvent)
+ SmearedEvent(erhic::EventPythia &truthEvent, Smear::Event &smearEvent, std::vector<int> chadChildIndices)
    : m_truthEvent(&truthEvent)
-   , m_smearEvent(&smearEvent)
-  {}
+    , m_smearEvent(&smearEvent)
+    , m_chadChildIndices(chadChildIndices)
+    {}
 
   ~SmearedEvent(){}
 
@@ -51,6 +52,8 @@ class SmearedEvent {
 
   void useBreitFrame(bool yesorno) { m_breitFrame = yesorno; }
 
+  bool D0kpiNoSmearFilter();
+
  private:
   /// Need truth event for identifying only final state particles
   erhic::EventPythia *m_truthEvent;
@@ -59,6 +62,7 @@ class SmearedEvent {
   const Smear::ParticleMCS *m_scatLepton;
   bool m_breitFrame;
   std::vector<PseudoJetVec> m_matchedJets;
+  std::vector<int> m_chadChildIndices;
   
   PseudoJetVec m_particles;
   PseudoJetVec m_truthParticles;

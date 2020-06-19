@@ -43,21 +43,25 @@ TLorentzVector SmearedEvent::getExchangeBoson()
 }
 void SmearedEvent::setSmearedParticles()
 {
+  int charmFlag = 0;
   double epsilon = 1e-7;
   BreitFrame breit(*m_truthEvent, *m_smearEvent);
 
   for(int part = 0; part < m_smearEvent->GetNTracks(); ++part)
     {
+      
       /// Skip the beam
       if( part < 3 )
 	continue;
+
       
       const Smear::ParticleMCS *particle = m_smearEvent->GetTrack(part);
       const Particle *truthParticle = m_truthEvent->GetTrack(part);
       
-      /// only want final state particles
-      if(truthParticle->GetStatus() != 1)
-	continue;
+      /// only want final state particles -- should be taken care of by truth list, and will still clster D meson //
+      // if(truthParticle->GetStatus() != 1)
+      //	continue;
+
       /// only particles that could nominally be in the detector
       if(fabs(truthParticle->GetEta()) > 3.5)
 	continue;
@@ -70,11 +74,18 @@ void SmearedEvent::setSmearedParticles()
       /// Skip the scattered electron, since it is special (nd we don't want it in jet finding, anyway)
       if(particle->GetE() == m_scatLepton->GetE())
 	continue;
+
       
       double px = particle->GetPx();
       double py = particle->GetPy();
       double pz = particle->GetPz();
-      double e = particle->GetE();
+      double e  = particle->GetE();
+
+      double truthPx = truthParticle->GetPx();
+      double truthPy = truthParticle->GetPy();
+      double truthPz = truthParticle->GetPz();
+      double truthE  = truthParticle->GetE();
+
 
       if(m_verbosity > 2)
 	{
@@ -146,18 +157,100 @@ void SmearedEvent::setSmearedParticles()
       // Check if it passes some nominal pT cut
       if(sqrt(px * px + py * py) < 0.25)
 	continue;
+      
+      // This will skip the charm children for clustering and replace them with the charm hadron //
+      bool chadChildren = false;
+      for (int i = 0; i<m_chadChildIndices.size(); ++i)
+      {
+        if( truthParticle->GetIndex() == m_chadChildIndices.at(i) )
+	  {
+	    if ( m_verbosity == -4 )
+	      std::cout << "Child index .. " << m_chadChildIndices.at(i) << std::endl;
+
+	    chadChildren = true;      
+	  }
+     
+      }
+      
+      if ( chadChildren )
+	{
+	  const Smear::ParticleMCS *child1 = m_smearEvent->GetTrack( m_chadChildIndices.at(0) - 1 );
+	  const Particle *truthChild1 = m_truthEvent->GetTrack( m_chadChildIndices.at(0) - 1 );
+
+	  const Smear::ParticleMCS *child2 = m_smearEvent->GetTrack( m_chadChildIndices.at(1) - 1 );
+	  const Particle *truthChild2 = m_truthEvent->GetTrack( m_chadChildIndices.at(1) - 1 );
+
+	  charmFlag++;
+	  if (charmFlag == 2)
+	    {
+	      TLorentzVector child1FourVec = child1->Get4Vector();
+	      TLorentzVector truthChild1FourVec = truthChild1->PxPyPzE();
+
+	      TLorentzVector child2FourVec = child2->Get4Vector();
+	      TLorentzVector truthChild2FourVec = truthChild2->PxPyPzE();;
+	      
+	      TLorentzVector *chadFourVec  = new TLorentzVector();
+	      TLorentzVector *truthChadFourVec  = new TLorentzVector();
+
+	      TLorentzVector temp = child1FourVec + child2FourVec;
+	      TLorentzVector truthTemp = truthChild1FourVec + truthChild2FourVec;
+
+	      chadFourVec->SetPxPyPzE( temp.Px(), temp.Py(), temp.Pz(), temp.E() );
+	      truthChadFourVec->SetPxPyPzE( truthTemp.Px(), truthTemp.Py(), truthTemp.Pz(), truthTemp.E() );
+
+	      if ( m_verbosity == -4 )
+		{
+		  std::cout << "truth1 mass : " << truthChild1FourVec.M() << " truth2 mass : " << truthChild2FourVec.M() << " smear1 mass : " << child1FourVec.M() << " smear2 mass : " << child2FourVec.M() << std::endl;
+
+		  std::cout << "truth D0 mass : " << truthChadFourVec->M() << " reco D0 mass : " << chadFourVec->M() << std::endl;
+
+		}
+	      if(m_breitFrame)
+		{
+		  breit.labToBreitSmear( chadFourVec );
+		  breit.labToBreitTruth( truthChadFourVec );
+		}
+	      
+	      m_particles.push_back(fastjet::PseudoJet(chadFourVec->Px(),
+						       chadFourVec->Py(),
+						       chadFourVec->Pz(),
+						       chadFourVec->E()));
+	      
+	      m_truthParticles.push_back(fastjet::PseudoJet(truthChadFourVec->Px(),
+	      						    truthChadFourVec->Py(),
+							    truthChadFourVec->Pz(),
+							    truthChadFourVec->E()));
+	    }
+	  
+	  continue;
+	}
+      
+      /*
+      const Smear::ParticleMCS *testPart = m_smearEvent->GetTrack( part );
+      const Particle *truthTestPart = m_truthEvent->GetTrack( part );
+      TLorentzVector testPartVec = testPart->Get4Vector();
+      TLorentzVector truthTestPartVec = truthTestPart->PxPyPzE();
+
+      std::cout << "truth test part mass : " << truthTestPartVec.M() << " reco test part mass : " << testPartVec.M() << std::endl;
+      */
 
       TLorentzVector *partFourVec = new TLorentzVector();
+      TLorentzVector *truthPartFourVec = new TLorentzVector();
       partFourVec->SetPxPyPzE(px,py,pz,e);
+      truthPartFourVec->SetPxPyPzE(truthPx,truthPy,truthPz,truthE);
+
 
       if(m_breitFrame)
-	breit.labToBreitSmear( partFourVec );
+	{
+	  breit.labToBreitSmear( partFourVec );
+	  breit.labToBreitTruth( truthPartFourVec );
+	}
 
       if(m_verbosity > 0)
 	{
 	  std::cout << "Smeared : " <<partFourVec->Px() << " " 
 		    << partFourVec->Py() << " " << partFourVec->Pz()
-		    << " " << partFourVec->E() << std::endl;		  
+		    << " " << partFourVec->E() << " mass : " << partFourVec->M() << std::endl;		  
 	}
 
       m_particles.push_back(fastjet::PseudoJet(partFourVec->Px(),
@@ -165,10 +258,10 @@ void SmearedEvent::setSmearedParticles()
 					       partFourVec->Pz(),
 					       partFourVec->E()));
       /// vectors will have a one-to-one correspondance
-      m_truthParticles.push_back(fastjet::PseudoJet(truthParticle->GetPx(),
-						    truthParticle->GetPy(),
-						    truthParticle->GetPz(),
-						    truthParticle->GetE()));
+      m_truthParticles.push_back(fastjet::PseudoJet(truthPartFourVec->Px(),
+      						    truthPartFourVec->Py(),
+						    truthPartFourVec->Pz(),
+						    truthPartFourVec->E()));
     }
 
   return;
@@ -300,4 +393,21 @@ std::vector<PseudoJetVec> SmearedEvent::matchTruthRecoJets(
 
 }
 
+
+bool SmearedEvent::D0kpiNoSmearFilter()
+{
+  double epsilon = 1e-7;
+  const Smear::ParticleMCS *child1 = m_smearEvent->GetTrack(m_chadChildIndices.at(0)-1);
+  const Smear::ParticleMCS *child2 = m_smearEvent->GetTrack(m_chadChildIndices.at(1)-1);
+  const Particle *truthChild1 = m_truthEvent->GetTrack(m_chadChildIndices.at(0)-1);
+  const Particle *truthChild2 = m_truthEvent->GetTrack(m_chadChildIndices.at(1)-1);
+  if (  child1 == NULL ||  fabs(child1->GetE()) <= epsilon || fabs(child1->GetP()) <= epsilon || 
+	child2 == NULL ||  fabs(child2->GetE()) <= epsilon || fabs(child2->GetP()) <= epsilon  )
+    return false;
+  else
+    // if (fabs(child1->GetM() - truthChild1->GetM()) > 0.1 ||  fabs(child2->GetM() - truthChild2->GetM()) > 0.1)
+    //return false;
+    //else
+    return true;
+}
 

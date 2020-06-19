@@ -104,15 +104,17 @@ void TruthEvent::setTruthParticles()
       if(fabs(truthParticle->GetEta()) > 3.5)
 	continue;
       if(truthParticle->GetPt() < 0.25)
-	continue;
+      	continue;
 
       bool chadChildren = false;
       for (int i = 0; i<chadChildIndices.size(); ++i)
       {
         if( truthParticle->GetIndex() == chadChildIndices.at(i) )
-          chadChildren = true;      
+	  {
+	    chadChildren = true;      
+	    m_chadChildIndices.push_back( truthParticle->GetIndex() );
+	  }
       }
-     
       if ( chadChildren )
 	continue;
 
@@ -135,10 +137,10 @@ void TruthEvent::setTruthParticles()
 	  std::cout << "Truth  : " <<truthParticle->Id() 
 		    << " " <<partFourVec->Px() << " " 
 		    << partFourVec->Py() << " " << partFourVec->Pz()
-		    << " " << partFourVec->E() << std::endl;	  
+		    << " " << partFourVec->E() << " mass : " << partFourVec->M() << std::endl;	  
 	}
 
-      
+      m_partIndices.push_back( truthParticle->GetIndex() );
       m_particles.push_back(fastjet::PseudoJet(partFourVec->Px(),
 					       partFourVec->Py(),
 					       partFourVec->Pz(),
@@ -254,7 +256,7 @@ bool TruthEvent::pgfCharmEvent()
   
 }
 
-bool TruthEvent::disD0toStableEvent()
+bool TruthEvent::disD0Event()
 {
   if (m_truthEvent->GetProcess() != 99 )
     return false;
@@ -292,16 +294,42 @@ bool TruthEvent::disD0toStableEvent()
     return false;  
 }
 
-void TruthEvent::PrintCharmEvent()
+bool TruthEvent::disD0kpiEvent()
 {
-  cout << "Process ID : " << m_truthEvent->GetProcess() << endl;
-  for(int part = 0; part < 11; ++part)
-    {
+  if (m_truthEvent->GetProcess() != 99 )
+    return false;
+
+  for(int part = 0; part < m_truthEvent->GetNTracks(); ++part)
+    {    
       const Particle *truthParticle = m_truthEvent->GetTrack(part);
-      cout << "PID : " << truthParticle->GetPdgCode() << endl;
+
+      // Identify a charm hadron from a hard scattered charm quark //
+      if (truthParticle->GetParentIndex() == 10 && abs(truthParticle->GetPdgCode()) == 4 && truthParticle->GetChild1Index() != 0 ) 
+	{
+	  // Note the indexing for GetTrack is different than the Pythia listing (it indexes from 0), so we map accordingly. 
+	  for (int child = truthParticle->GetChild1Index() - 1; child < truthParticle->GetChildNIndex(); ++child)
+	    {
+	      const Particle *chad = m_truthEvent->GetTrack(child);
+ 
+	      //cout << "PID TEST... " << chad->GetPdgCode() << endl;
+
+	      int chadPid = abs(chad->GetPdgCode());
+	      if (chadPid == 421)
+		{
+		  bool passedCharmChildCuts;
+		  passedCharmChildCuts = D0kpiDecayFilter( chad );
+
+		  if (!passedCharmChildCuts )
+		    return false;
+		  else
+		    return true;
+			
+		}
+	    }
+	}
     }
 
-  return;
+    return false;  
 }
 
 bool TruthEvent::CharmDecayFilter( const Particle *part )
@@ -326,13 +354,37 @@ bool TruthEvent::CharmDecayFilter( const Particle *part )
   return true;
 } 
 
+bool TruthEvent::D0kpiDecayFilter( const Particle *part )
+{
+
+  if (part->GetNChildren() != 2) 
+    { return false; }
+  else
+    for (int childIndex = part->GetChild1Index() - 1; childIndex < part->GetChildNIndex(); ++childIndex)
+      {
+	const Particle *child = m_truthEvent->GetTrack(childIndex);		      
+	if ( abs(child->GetPdgCode())!= 211 &&  abs(child->GetPdgCode()) != 321 ) 
+	  {
+	    return false;
+	  }
+	
+	else
+	  {
+	    if(fabs(child->GetEta()) > 3.5 || child->GetPt() < 0.25)
+	      return false;	
+	  }
+      }
+  
+  return true;
+} 
+
 void TruthEvent::CharmDecayTagger( const Particle *part, vector<int> &childIndices )
 {
   for (int childIndex = part->GetChild1Index() - 1; childIndex < part->GetChildNIndex(); ++childIndex)
     {
       const Particle *child = m_truthEvent->GetTrack(childIndex);		      
       if (child->GetStatus() != 1)
-	{	  
+	{
 	  CharmDecayTagger( child, childIndices ); 
 	}
       else
@@ -340,11 +392,9 @@ void TruthEvent::CharmDecayTagger( const Particle *part, vector<int> &childIndic
 	  childIndices.push_back( child->GetIndex() );
 
 	  if (m_verbosity == -4 )
-	    std::cout << "Charm Stable Child: " <<child->Id() 
-		      << " " <<child->GetPx() << " " 
-		      << child->GetPy() << " " << child->GetPz()
-		      << " " << child->GetE()  
-		      << " " << child->GetIndex() << std::endl;
+	    std::cout << "Charm Child: " << " PID : " << child->Id()
+		      << " " <<child->GetPt() << " " << child->GetEta() 
+		      << " " <<" Index : " << child->GetIndex() << std::endl;
 	}
     }
 

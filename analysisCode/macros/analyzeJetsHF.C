@@ -35,6 +35,8 @@ void recoJetAnalysis(JetConstVec *recojets)
 
       recojetpteta->Fill(jetpt, jetVec.Eta());
       recojetptphi->Fill(jetpt, jetVec.Phi());
+      recojetmass->Fill( jetVec.M() );
+
 
       TVector3 jet3;
       jet3.SetXYZ(jetVec.Px(), jetVec.Py(), jetVec.Pz());
@@ -50,11 +52,16 @@ void recoJetAnalysis(JetConstVec *recojets)
 	  float z = jet3.Dot(con3) / (jet3.Mag2());
 	  float jt = cross.Mag() / jet3.Mag();
 	  float r = sqrt(pow(checkdPhi(jetVec.Phi() - con.Phi()), 2) + pow(jetVec.Eta() - con.Eta(),2));
+	  
+	  if (con.M() > 1.5 && con.M() < 2.0)
+	    {
+	      recojetptz->Fill(z, jetpt);
+	      recojetptjt->Fill(jt, jetpt);
+	      recojetptr->Fill(r, jetpt);
+	    }
 
-	  recojetptz->Fill(z, jetpt);
-	  recojetptjt->Fill(jt, jetpt);
-	  recojetptr->Fill(r, jetpt);
-
+	  recoconstmass->Fill(con.M());
+	  
 	}
     }
 }
@@ -77,74 +84,32 @@ double truthJetAnalysis(JetConstVec *truthjets)
       
       truejetptphi->Fill(jetVec.Pt(), jetVec.Phi());
       truejetpteta->Fill(jetVec.Pt(), jetVec.Eta());
+      truejetmass->Fill( jetVec.M() );
+
       TVector3 jet3;
       jet3.SetXYZ(jetVec.Px(), jetVec.Py(), jetVec.Pz());
 
-      TLorentzVector con1, con2, con3;
+      TLorentzVector con;
       for(int j = 0; j < truthJets->at(jet).second.size(); ++j)
 	{
-	  con1 = truthJets->at(jet).second.at(j);
-	  TVector3 con3_1;
-	  con3_1.SetXYZ(con1.Px(), con1.Py(), con1.Pz());
-	  TVector3 cross = jet3.Cross(con3_1);	  
+	  con = truthJets->at(jet).second.at(j);
+	  TVector3 con3;
+	  con3.SetXYZ(con.Px(), con.Py(), con.Pz());
+	  TVector3 cross = jet3.Cross(con3);	  
 
-	  float z1 = jet3.Dot(con3_1) / (jet3.Mag2());
+	  float z = jet3.Dot(con3) / (jet3.Mag2());
 	  float jt = cross.Mag() / jet3.Mag();
-	  float r = sqrt(pow(checkdPhi(jetVec.Phi() - con1.Phi()), 2) + pow(jetVec.Eta() - con1.Eta(),2));
+	  float r = sqrt(pow(checkdPhi(jetVec.Phi() - con.Phi()), 2) + pow(jetVec.Eta() - con.Eta(),2));
 
-	  truejetptz->Fill(z1, jetpt);
-	  truejetptjt->Fill(jt, jetpt);
-	  truejetptr->Fill(r, jetpt);
-	  constmass->Fill(con1.M());
-	  
-	  /// Pair mass calulation for HF tagging
-	  /*  for(int k = 0; k < truthjets->at(jet).second.size(); ++k)
+	  if (con.M() > 1.5 && con.M() < 2.0)
 	    {
-	      if (k != j)
-		{
-		  con2 = truthjets->at(jet).second.at(k);
-		  // if ((abs(con1.M() - pion_mass) < 0.0001 && abs(con2.M() - kaon_mass) < 0.001) || (abs(con2.M() - pion_mass) < 0.0001 && abs(con1.M() - kaon_mass) < 0.001) )
-		  // {	
-		  TLorentzVector pair = con1 + con2;
-		  float pair_mass = pair.M();
+	      truejetptz->Fill(z, jetpt);
+	      truejetptjt->Fill(jt, jetpt);
+	      truejetptr->Fill(r, jetpt);
+	    }
 
-		  TVector3 con3_2;
-		  con3_2.SetXYZ(con2.Px(), con2.Py(), con2.Pz());
-		  float z2 = jet3.Dot(con3_2) / (jet3.Mag2());
-
-		  //if (z1 < 0.15) 
-		  //		continue;
-		  //if (z2 < 0.15)
-		  //		continue;
-		  
-		  truepairmass->Fill(pair_mass);
-		  // }
-		}
-
-	      for(int l = 0; l < truthjets->at(jet).second.size(); ++l)
-		{
-		  if (l != j)
-		    {
-		      con3 = truthjets->at(jet).second.at(l);
-		      // if ((abs(con1.M() - pion_mass) < 0.0001 && abs(con2.M() - kaon_mass) < 0.001) || (abs(con2.M() - pion_mass) < 0.0001 && abs(con1.M() - kaon_mass) < 0.001) )
-		      // {	
-		      TLorentzVector threebody = con1 + con2 + con3;
-		      float threebody_mass = threebody.M();
-		      
-		      TVector3 con3_3;
-		      con3_3.SetXYZ(con3.Px(), con3.Py(), con3.Pz());
-		      float z3 = jet3.Dot(con3_3) / (jet3.Mag2());
-		      
-		      //if (z1 < 0.15) 
-		      //		continue;
-		      //if (z2 < 0.15)
-		      //		continue;
-		      
-		      truethreebodymass->Fill(threebody_mass);
-		      // }
-		    }		
-		}	      
-	    }*/
+	  trueconstmass->Fill(con.M());
+	  
 	} 
     }  
 

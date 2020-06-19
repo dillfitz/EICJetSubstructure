@@ -37,6 +37,10 @@ class TruthEvent {
   PseudoJetVec getTruthSoftDropJets(PseudoJetVec recoJets, 
 				   SoftDropJetDef sdJetDef);
 
+  std::vector<int> getPartIndices() { return m_partIndices; }
+  std::vector<int> getChadChildIndices() { return m_chadChildIndices; }
+
+
   void useBreitFrame(bool yesorno) { m_breitFrame = yesorno; }
   void setMinQ2(double q2) { m_minq2 = q2; }
   void setMinY(double y) {m_minY = y; }
@@ -46,8 +50,11 @@ class TruthEvent {
   bool CharmEvent();
   bool disCharmEvent();
   bool pgfCharmEvent();
-  bool disD0toStableEvent();
+  bool disD0Event();
+  bool disD0kpiEvent();
+  // Some of these should maybe be private... i.e. DecayFilter & Tagger //
   bool CharmDecayFilter( const Particle *part );
+  bool D0kpiDecayFilter( const Particle *part );
   void CharmDecayTagger( const Particle *part, vector<int> &childIndices );
   void PrintCharmEvent();
   PseudoJetVec CharmJetTagging(PseudoJetVec);
@@ -70,6 +77,9 @@ class TruthEvent {
   int m_verbosity = 0;
 
   PseudoJetVec m_particles;
+  std::vector<int> m_partIndices;
+  std::vector<int> m_chadChildIndices;
+
 
   void setScatteredLepton();
   void setTruthParticles();

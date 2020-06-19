@@ -44,6 +44,7 @@ int main(int argc, char **argv)
       if(event % 20000 == 0)
 	std::cout<<"Processed " << event << " events" << std::endl;
 
+      std::vector<int> chadChildIndices;
       mctree->GetEntry(event);
 
       truex = truthEvent->GetTrueX();
@@ -51,7 +52,7 @@ int main(int argc, char **argv)
       trueq2 = truthEvent->GetTrueQ2();
      
       TruthEvent trueEvent(*truthEvent);
-      trueEvent.setVerbosity(0);
+      trueEvent.setVerbosity(-4);
       trueEvent.useBreitFrame(breitFrame);
       exchangeBoson = trueEvent.getExchangeBoson();
 
@@ -65,15 +66,23 @@ int main(int argc, char **argv)
 	continue;
       }
 
-      if (trueEvent.disCharmEvent() == 0) 
+      if (!trueEvent.disCharmEvent()) 
 	continue;
 
-      if (trueEvent.disD0toStableEvent() == 0) 
+      if (!trueEvent.disD0kpiEvent()) 
 	continue;
 
       /// This is just to check that the heavy flavor event filters are working 
       //trueEvent.PrintCharmEvent();
       trueEvent.processEvent();
+
+      chadChildIndices = trueEvent.getChadChildIndices();
+
+
+      //for (int i=0; i<partIndices.size(); ++i)
+      //{
+      //  cout << " Particles to be clustered.. " <<  partIndices.at(i) << endl;
+      //}
 
       PseudoJetVec fjtruthR1Jets = trueEvent.getTruthJets(truthcs, R1jetdef);
       PseudoJetVec fjtruthR1SDJets = trueEvent.getTruthSoftDropJets(fjtruthR1Jets, R1sd);
@@ -82,9 +91,13 @@ int main(int argc, char **argv)
 	  continue;
 	}
 
-      SmearedEvent smearedEvent(*truthEvent, *smearEvent);
-      smearedEvent.setVerbosity(0);     
+      SmearedEvent smearedEvent(*truthEvent, *smearEvent, chadChildIndices);
+      smearedEvent.setVerbosity(-4);     
       smearedEvent.useBreitFrame(breitFrame);
+
+      if ( !smearedEvent.D0kpiNoSmearFilter() )
+	continue;
+
       smearedEvent.processEvent();
       recx = smearEvent->GetX();
       recy = smearEvent->GetY();

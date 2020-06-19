@@ -20,7 +20,9 @@ TH2 *recoSDjetzg, *recoSDjetrg;
 TH2 *truthrecozg, *truthrecorg;
 TH1 *sdenergygroomed;
 TH1 *truenjetevent, *reconjetevent;
-TH1 *constmass, *truepairmass, *truethreebodymass;
+TH1 *trueconstmass, *truepairmass, *truethreebodymass;
+TH1 *recoconstmass;
+TH1 *truejetmass, *recojetmass;
 
 void write(std::string infileName)
 {
@@ -38,6 +40,9 @@ void write(std::string infileName)
 
  if( infileName.find("_d0") != string::npos )
     outfileName += "_d0";
+
+ if( infileName.find("kpi") != string::npos )
+    outfileName += "kpi";
 
  if( infileName.find("_1") != string::npos )
     outfileName += "_1";
@@ -91,7 +96,10 @@ void write(std::string infileName)
   recojetptetatruejetpt->Write();
   truenjetevent->Write();
   reconjetevent->Write();
-  constmass->Write();
+  truejetmass->Write();
+  recojetmass->Write();
+  trueconstmass->Write();
+  recoconstmass->Write();
   //truepairmass->Write();
   //truethreebodymass->Write();
 
@@ -190,7 +198,13 @@ void instantiateHistos()
 
   reconjetevent = new TH1I("reconjetevent", "; N^{jet, true}; Counts", 10, 0, 10);
 
-  constmass = new TH1F("constmass", ";M_{con} [GeV]; ", 40, 1, 3.);
+  trueconstmass = new TH1F("trueconstmass", ";M_{con} [GeV]; ", 120, 1., 3.);
+
+  recoconstmass = new TH1F("recoconstmass", ";M_{con} [GeV]; ", 120, 1., 3.);
+
+  truejetmass = new TH1F("truejetmass", ";M_{jet}^{true} [GeV]; ", 100, 0., 20.);
+
+  recojetmass = new TH1F("recojetmass", ";M_{jet}^{reco} [GeV]; ", 100, 0., 20.);
 
   truepairmass = new TH1F("truepairmass", ";M_{pair} [GeV]; ", 40, 1, 3.);
 
