@@ -13,7 +13,8 @@
 import os
 import sys
 
-def runPythia(outfile, protonEnergy, electronEnergy, minQ2, nEvents, basePath):
+def runPythia(outfile, protonEnergy, electronEnergy, minQ2, 
+              nEvents, basePath, processID):
     """
     This function takes several arguments and runs the pythia truth generation
     with the parameters given as arguments and the "default file", which 
@@ -22,6 +23,7 @@ def runPythia(outfile, protonEnergy, electronEnergy, minQ2, nEvents, basePath):
     protonEnergy   - proton beam energy
     electronEnergy - electron beam energy
     nEvents        - number of events to run
+    processID      - an integer to identify the process number from condor
     """
 
     # get the default pythia parameters that we don't want to fuss with
@@ -35,7 +37,8 @@ def runPythia(outfile, protonEnergy, electronEnergy, minQ2, nEvents, basePath):
     events = nEvents + ",1 ! Number of events, number of events to print to stdout\n"
     
     # write all the stuff to a dummyfile to be passed to the erhic executable
-    finalPythiaFile = open("pythiafile.txt","w")
+    pythiafilename = "pythiafile_" + processID + ".txt"
+    finalPythiaFile = open(pythiafilename,"w")
     finalPythiaFile.write(output)
     finalPythiaFile.write(leptonBeam)
     finalPythiaFile.write(energies)
@@ -50,15 +53,15 @@ def runPythia(outfile, protonEnergy, electronEnergy, minQ2, nEvents, basePath):
     finalPythiaFile.write(defaultPythia)
     finalPythiaFile.close()
     
-    executable = "$EICDIRECTORY/bin/pythiaeRHIC < pythiafile.txt"
+    executable = "$EICDIRECTORY/bin/pythiaeRHIC < " + pythiafilename + " > logfile_" + processID + ".log"
     os.system(executable)
     
     # Convert the ugly text file to a root tree with truth information
     import ROOT
     ROOT.gSystem.Load("libeicsmear")
-    ROOT.BuildTree(outfile, ".", -1)
+    ROOT.BuildTree(outfile, ".", -1,"logfile_"+processID+".log")
     
     # remove the files we created once we are finished with it
-    os.system("rm pythiafile.txt")
+    os.system("rm " + pythiafilename)
     os.system("rm " + outfile)
-    
+    os.system("rm logfile_"+processID+".log")

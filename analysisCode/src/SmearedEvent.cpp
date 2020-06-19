@@ -26,8 +26,7 @@ void SmearedEvent::setScatteredLepton()
 
 TLorentzVector SmearedEvent::getExchangeBoson()
 {
-  //TLorentzVector *init = new TLorentzVector( m_smearEvent->BeamLepton()->Get4Vector());
-  //TLorentzVector *scat = new TLorentzVector( m_smearEvent->ScatteredLepton()->Get4Vector());
+ 
   TLorentzVector init(m_smearEvent->BeamLepton()->Get4Vector());
   TLorentzVector scat(m_smearEvent->ScatteredLepton()->Get4Vector());
   
@@ -38,11 +37,16 @@ TLorentzVector SmearedEvent::getExchangeBoson()
       BreitFrame breit(*m_truthEvent, *m_smearEvent);
       breit.labToBreitSmear(&exchangeBoson);
     }
+ 
   return exchangeBoson;
 
 }
 void SmearedEvent::setSmearedParticles()
 {
+
+  if (m_verbosity == -4)
+    std::cout << "New D0 Smeared Event... " << std::endl;
+
   int charmFlag = 0;
   double epsilon = 1e-7;
   BreitFrame breit(*m_truthEvent, *m_smearEvent);
@@ -62,8 +66,11 @@ void SmearedEvent::setSmearedParticles()
       // if(truthParticle->GetStatus() != 1)
       //	continue;
 
+
       /// only particles that could nominally be in the detector
-      if(fabs(truthParticle->GetEta()) > 3.5)
+      if(fabs(truthParticle->GetEta()) > m_maxPartEta)
+	continue;
+      if(truthParticle->GetPt() < m_minPartPt)
 	continue;
 
       /// If truth particle wasn't smeared (e.g. out of acceptance), skip
@@ -154,8 +161,8 @@ void SmearedEvent::setSmearedParticles()
 	}
 
 
-      // Check if it passes some nominal pT cut
-      if(sqrt(px * px + py * py) < 0.25)
+      // Check if smeared particle also passes some nominal pT cut
+      if(sqrt(px * px + py * py) < m_minPartPt)
 	continue;
       
       // This will skip the charm children for clustering and replace them with the charm hadron //
@@ -203,12 +210,12 @@ void SmearedEvent::setSmearedParticles()
 		  std::cout << "truth1 mass : " << truthChild1FourVec.M() << " truth2 mass : " << truthChild2FourVec.M() << " smear1 mass : " << child1FourVec.M() << " smear2 mass : " << child2FourVec.M() << std::endl;
 
 		  std::cout << "truth D0 mass : " << truthChadFourVec->M() << " reco D0 mass : " << chadFourVec->M() << std::endl;
-
 		}
+
 	      if(m_breitFrame)
 		{
-		  breit.labToBreitSmear( chadFourVec );
 		  breit.labToBreitTruth( truthChadFourVec );
+		  breit.labToBreitSmear( chadFourVec );
 		}
 	      
 	      m_particles.push_back(fastjet::PseudoJet(chadFourVec->Px(),
@@ -239,18 +246,17 @@ void SmearedEvent::setSmearedParticles()
       partFourVec->SetPxPyPzE(px,py,pz,e);
       truthPartFourVec->SetPxPyPzE(truthPx,truthPy,truthPz,truthE);
 
-
       if(m_breitFrame)
 	{
-	  breit.labToBreitSmear( partFourVec );
 	  breit.labToBreitTruth( truthPartFourVec );
+	  breit.labToBreitSmear( partFourVec );
 	}
 
       if(m_verbosity > 0)
 	{
 	  std::cout << "Smeared : " <<partFourVec->Px() << " " 
 		    << partFourVec->Py() << " " << partFourVec->Pz()
-		    << " " << partFourVec->E() << " mass : " << partFourVec->M() << std::endl;		  
+		    << " " << partFourVec->E() << " mass : " << partFourVec->M() << std::endl;	      
 	}
 
       m_particles.push_back(fastjet::PseudoJet(partFourVec->Px(),
@@ -259,7 +265,7 @@ void SmearedEvent::setSmearedParticles()
 					       partFourVec->E()));
       /// vectors will have a one-to-one correspondance
       m_truthParticles.push_back(fastjet::PseudoJet(truthPartFourVec->Px(),
-      						    truthPartFourVec->Py(),
+						    truthPartFourVec->Py(),
 						    truthPartFourVec->Pz(),
 						    truthPartFourVec->E()));
     }
@@ -393,7 +399,7 @@ std::vector<PseudoJetVec> SmearedEvent::matchTruthRecoJets(
 
 }
 
-
+/*
 bool SmearedEvent::D0kpiNoSmearFilter()
 {
   double epsilon = 1e-7;
@@ -401,13 +407,15 @@ bool SmearedEvent::D0kpiNoSmearFilter()
   const Smear::ParticleMCS *child2 = m_smearEvent->GetTrack(m_chadChildIndices.at(1)-1);
   const Particle *truthChild1 = m_truthEvent->GetTrack(m_chadChildIndices.at(0)-1);
   const Particle *truthChild2 = m_truthEvent->GetTrack(m_chadChildIndices.at(1)-1);
-  if (  child1 == NULL ||  fabs(child1->GetE()) <= epsilon || fabs(child1->GetP()) <= epsilon || 
-	child2 == NULL ||  fabs(child2->GetE()) <= epsilon || fabs(child2->GetP()) <= epsilon  )
+  // if (  child1 == NULL ||  fabs(child1->GetE()) <= epsilon || fabs(child1->GetP()) <= epsilon || 
+  //	child2 == NULL ||  fabs(child2->GetE()) <= epsilon || fabs(child2->GetP()) <= epsilon  )
+  //  return false;
+  //else
+  //return true;
+
+  if (  child1 == NULL || child2 == NULL  )
     return false;
   else
-    // if (fabs(child1->GetM() - truthChild1->GetM()) > 0.1 ||  fabs(child2->GetM() - truthChild2->GetM()) > 0.1)
-    //return false;
-    //else
     return true;
 }
-
+*/

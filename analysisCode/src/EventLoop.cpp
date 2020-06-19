@@ -19,12 +19,13 @@ int main(int argc, char **argv)
 
   TFile mc(mcFile.c_str());
   TTree *mctree = (TTree*)mc.Get("EICTree");
-  
+
   TFile *outfile = new TFile(outputFile.c_str(), "recreate");
   jetTree = new TTree("jettree", "A tree with jets");
 
-  setupJetTree(jetTree);
-
+  setupJetTree();
+  setupRunTree();
+  
   mctree->AddFriend("Smeared", smearedFile.c_str());
   erhic::EventPythia* truthEvent(NULL);
   Smear::Event* smearEvent(NULL);
@@ -33,10 +34,33 @@ int main(int argc, char **argv)
   mctree->SetBranchAddress("eventS", &smearEvent);
 
   JetDef R1jetdef(fastjet::antikt_algorithm, 1.0);
-  R1jetdef.setMinJetPt(2.);
-  R1jetdef.setMaxJetRapidity(4);
+  R1jetdef.setMinJetPt(4.);
+  R1jetdef.setMaxJetRapidity(3.5);
+  
   SoftDropJetDef R1sd(0.1, 0, R1jetdef.getR());
+  
+  /// Collect information to write out integrated lumi from PYTHIA run
+  TObjString *nEventsString(NULL), *crossSectionString(NULL), 
+    *nEventsTriedString(NULL);
+  mc.GetObject("nTrials", nEventsTriedString);
+  mc.GetObject("nEvents", nEventsString);
+  mc.GetObject("crossSection", crossSectionString);
+  
+  stringstream stream;
+  if(nEventsString != nullptr){
+    stringstream(nEventsString->GetString().Data()) >> nEventsGen;
+  }
+  if(crossSectionString != nullptr){
+    stringstream(crossSectionString->GetString().Data()) >> totalCrossSection;
+  }
+  if(nEventsTriedString != nullptr){
+    stringstream(nEventsTriedString->GetString().Data()) >> nEventsTried;
+  }
 
+  /// total cross section is units of micro barn
+  integratedLumi = (float) nEventsGen / totalCrossSection;
+  runTree->Fill();
+  
   std::cout<<"begin event loop"<<std::endl;
   for(int event = 0; event < mctree->GetEntries(); ++event)
   //for(int event = 0; event < 5000; ++event)
@@ -46,11 +70,12 @@ int main(int argc, char **argv)
 
       std::vector<int> chadChildIndices;
       mctree->GetEntry(event);
-
+      processId = truthEvent->GetProcess();
       truex = truthEvent->GetTrueX();
       truey = truthEvent->GetTrueY();
       trueq2 = truthEvent->GetTrueQ2();
-     
+      truenu = truthEvent->GetTrueNu();
+
       TruthEvent trueEvent(*truthEvent);
       trueEvent.setVerbosity(-4);
       trueEvent.useBreitFrame(breitFrame);
@@ -58,9 +83,12 @@ int main(int argc, char **argv)
 
       /// Set event level cuts
       trueEvent.setMinQ2(16);
-      trueEvent.setMinY(0.01);
+      trueEvent.setMinY(0.05);
       trueEvent.setMaxY(0.95);
       trueEvent.setMinX(0.00001);
+      trueEvent.setMinPartPt(0.25);
+      trueEvent.setMaxPartEta(3.5);
+      
       /// Check the cuts
       if(!trueEvent.passCuts()){
 	continue;
@@ -70,22 +98,24 @@ int main(int argc, char **argv)
 	continue;
 
       if (!trueEvent.disD0kpiEvent()) 
-	continue;
-
+	{
+	  continue;
+	}
       /// This is just to check that the heavy flavor event filters are working 
       //trueEvent.PrintCharmEvent();
+      recx = smearEvent->GetX();
+      recy = smearEvent->GetY();
+      recq2 = smearEvent->GetQ2();
+      recnu = smearEvent->GetNu();
+ 
       trueEvent.processEvent();
 
       chadChildIndices = trueEvent.getChadChildIndices();
 
-
-      //for (int i=0; i<partIndices.size(); ++i)
-      //{
-      //  cout << " Particles to be clustered.. " <<  partIndices.at(i) << endl;
-      //}
-
       PseudoJetVec fjtruthR1Jets = trueEvent.getTruthJets(truthcs, R1jetdef);
       PseudoJetVec fjtruthR1SDJets = trueEvent.getTruthSoftDropJets(fjtruthR1Jets, R1sd);
+      
+      /// skip events with no truth jets
       if(fjtruthR1Jets.size() == 0)
 	{
 	  continue;
@@ -95,13 +125,15 @@ int main(int argc, char **argv)
       smearedEvent.setVerbosity(-4);     
       smearedEvent.useBreitFrame(breitFrame);
 
-      if ( !smearedEvent.D0kpiNoSmearFilter() )
-	continue;
-
+      // if ( !smearedEvent.D0kpiNoSmearFilter() )
+      //{
+      //  cout << " died here... " << endl;
+      //  continue;
+      //}
+      smearedEvent.setMaxPartEta(3.5);
+      smearedEvent.setMinPartPt(0.25);
       smearedEvent.processEvent();
-      recx = smearEvent->GetX();
-      recy = smearEvent->GetY();
-      recq2 = smearEvent->GetQ2();
+
       smearExchangeBoson = smearedEvent.getExchangeBoson();
       matchedParticles = smearedEvent.getMatchedParticles();      
 
@@ -128,6 +160,7 @@ int main(int argc, char **argv)
   
   outfile->cd();
   jetTree->Write();
+  runTree->Write();
   outfile->Close();
   mc.Close();
 
@@ -150,9 +183,19 @@ std::vector<std::vector<JetConstPair>> convertMatchedJetVec(std::vector<PseudoJe
   return matchedJets;
 }
 
-void setupJetTree(TTree *tree)
+void setupRunTree()
 {
+  runTree = new TTree("runTree","A tree with run info");
+  runTree->Branch("nEventsTried", &nEventsTried, "nEventsTried/F");
+  runTree->Branch("nEventsGen", &nEventsGen, "nEventsGen/F");
+  runTree->Branch("totalCrossSection", &totalCrossSection, "totalCrossSection/F");
+  runTree->Branch("integratedLumi", &integratedLumi, "integratedLumi/F");
 
+}
+
+void setupJetTree()
+{
+  jetTree->Branch("processId",&processId,"processId/I");
   jetTree->Branch("truthR1Jets", &truthR1Jets);
   jetTree->Branch("recoR1Jets", &recoR1Jets);
   jetTree->Branch("recoR1SDJets", &recoR1SDJets);
@@ -163,9 +206,11 @@ void setupJetTree(TTree *tree)
   jetTree->Branch("truex",&truex,"truex/D");
   jetTree->Branch("truey",&truey,"truey/D");
   jetTree->Branch("trueq2",&trueq2,"trueq2/D");
+  jetTree->Branch("truenu",&truenu,"truenu/D");
   jetTree->Branch("recx",&recx,"recx/D");
   jetTree->Branch("recy",&recy,"recy/D");
   jetTree->Branch("recq2",&recq2,"recq2/D");
+  jetTree->Branch("recnu",&recnu,"recnu/D");
   jetTree->Branch("matchedParticles",&matchedParticles);
   jetTree->Branch("truthR1SDJets", &truthR1SDJets);
   return;

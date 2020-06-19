@@ -3,6 +3,16 @@
  * the actual source code
  */
 
+TLorentzPairVec *matchedParticles;
+TLorentzVector *truthExchangeBoson, *smearedExchangeBoson;
+JetConstVec *truthJets, *recoJets, *recoSDJets, *truthSDJets;
+MatchedJets *matchedJets, *matchedSDJets;
+double recx, recy, recq2, truey, truex, trueq2;
+
+TFile *infile, *outfile;
+TTree *jettree;
+
+TH2 *truthsubjetpt, *recosubjetpt;
 TH2 *truerecoz, *truerecojt, *truerecor;
 TH2 *recojetpteta, *recojetptphi;
 TH2 *truerecx, *truerecy, *truerecq2;
@@ -18,11 +28,31 @@ TH1 *truthRecoConstdPhi, *truthRecoConstdEta, *truthRecoConstdRap;
 TH2 *truthSDjetzg, *truthSDjetrg;
 TH2 *recoSDjetzg, *recoSDjetrg;
 TH2 *truthrecozg, *truthrecorg;
-TH1 *sdenergygroomed;
+TH1 *sdenergygroomed, *truthrecosdjetdeltar;
+TH2 *truereconconst;
+TH2 *truenconst, *reconconst;
+TH1 *matchconstp, *matchconstpt;
+TH2 *recomatchdr;
+TH1 *nrecojets, *ntruthjets;
+TH2 *truthjetbosonphi, *truthjetbosontheta, *truthjetbosoneta;
+TH2 *truejetpttheta, *truejetptheta;
+TH1 *h_lumi, *h_eventsGen, *h_xsec;
 
-void write()
+void write(std::string filename)
 {
-  outfile = new TFile("histos.root","RECREATE");
+  std::string file = filename + "_histos.root";
+  outfile = new TFile(file.c_str(),"RECREATE");
+  h_lumi->Write();
+  h_xsec->Write();
+  h_eventsGen->Write();
+  truthjetbosonphi->Write();
+  truthjetbosontheta->Write();
+  truthjetbosoneta->Write();
+  truejetpttheta->Write();
+  truejetptheta->Write();
+  
+  recosubjetpt->Write();
+  truthsubjetpt->Write();
   sdenergygroomed->Write();
   truthSDjetzg->Write();
   truthSDjetrg->Write();
@@ -30,7 +60,8 @@ void write()
   recoSDjetrg->Write();
   truthrecozg->Write();
   truthrecorg->Write();
-
+  recomatchdr->Write();
+  truereconconst->Write();
   truerecx->Write();
   truerecy->Write();
   truerecq2->Write();
@@ -52,7 +83,8 @@ void write()
   recotruejeteta->Write();
   recotruejetp->Write();
   recotruejete->Write();
-  
+  matchconstp->Write();
+  matchconstpt->Write();
   truerecoz->Write();
   truerecojt->Write();
   truerecor->Write();
@@ -63,6 +95,11 @@ void write()
   truthRecoConstdEta->Write();
   truthRecoConstdRap->Write();
   recojetptetatruejetpt->Write();
+  truthrecosdjetdeltar->Write();
+  truenconst->Write();
+  reconconst->Write();
+  ntruthjets->Write();
+  nrecojets->Write();
 
   outfile->Write();
   outfile->Close();
@@ -70,6 +107,35 @@ void write()
 }
 void instantiateHistos()
 {
+  for(int i = 0; i< nzgbins+1; i++)
+    {
+      zgbins[i] = 0 + i * 0.5 / nzgbins;
+    }
+
+  h_xsec = new TH1F("h_xsec",";#sigma [#mub]",1000,0,0.0001);
+  h_lumi = new TH1F("h_lumi",";Luminosity [#mub]^{-1}",1000,10e9,10e11);
+  h_eventsGen = new TH1F("h_eventsGen",";N_{events}",10000000,0,10000000);
+  truejetptheta = new TH2F("truejetptheta",";p^{true} [GeV]; #theta_{jet}^{true} [rad]", 50,0,50,300,-4,4);
+  truejetpttheta = new TH2F("truejetpttheta",";p_{T}^{true} [GeV]; #theta_{jet}^{true} [rad]", 50,0,50,300,-4,4);
+  truthjetbosonphi = new TH2F("truthjetbosonphi",";#phi^{truth}_{boson} [rad]; #phi^{truth}_{jet} [rad]",300,-3.14159,3.14159, 300,-3.14159,3.14159);
+  truthjetbosoneta = new TH2F("truthjetbosoneta",";#eta^{truth}_{boson};#eta^{truth}_{jet}",300,-40,40,300,-40,40);
+  truthjetbosontheta = new TH2F("truthjetbosontheta",";#theta^{truth}_{boson} [rad]; #theta^{truth}_{jet} [rad]",300,-4,4,300,-4,4);
+
+  recosubjetpt = new TH2F("recosubjetpt",";p_{T}^{subjet,1} [GeV];p_{T}^{subjet,2} [GeV]", 40,0,40,40,0,40);
+  truthsubjetpt = new TH2F("truthsubjetpt",";p_{T}^{subjet,1} [GeV];p_{T}^{subjet,2} [GeV]", 40,0,40,40,0,40);
+
+  ntruthjets = new TH1F("ntruthjets",";N_{jets}",10,-0.5,9.5);
+  nrecojets = new TH1F("nrecojets",";N_{jets}",10,-0.5,9.5);
+  recomatchdr = new TH2F("recomatchdr",";#DeltaR;p_{T}^{jet,reco} [GeV]",
+			 30,0,3,30,4,34);
+
+  matchconstp = new TH1F("matchconstp",";p_{T}^{reco}/p_{T}^{true}",100,0.5,1.5);
+  matchconstpt = new TH1F("matchconstpt",";p_{T}^{reco}/p_{T}^{true}",100,0.5,1.5);
+  reconconst = new TH2F("reconconst",";p_{T}^{jet,reco} [GeV]; N_{const}^{reco}",30,4,34,30,0,30);
+  truenconst = new TH2F("truenconst",";p_{T}^{jet,true} [GeV];N_{const}^{true}",30,4,34,30,0,30);
+  truereconconst = new TH2F("truereconconst",";N_{const}^{true};N_{const}^{reco}",30,0,30,30,0,30);
+  truthrecosdjetdeltar = new TH1F("truthrecosdjetdeltar",";#DeltaR(truth,reco)",
+				  120,0,1.2);
   sdenergygroomed = new TH1F("sdenergygroomed",";E_{SD}/E_{AKT}",101,0,1.01);
   truthrecozg = new TH2F("truthrecozg",";z_{g}^{true}; z_{g}^{reco}",
 			 nzgbins, zgbins, nzgbins, zgbins);
@@ -102,9 +168,9 @@ void instantiateHistos()
   trueQ2pT = new TH2F("trueq2pt",";Q_{true}^{2} [GeV^{2}]; p_{T}^{true} [GeV]",
 		      nq2bins,qbins,nptbins,ptbins);
   truejetpteta = new TH2F("truejetpteta",";p_{T}^{true} [GeV]; #eta",
-			  30,4,34,50,-3,3);
+			  34,0,34,500,-30,30);
   truejetptphi = new TH2F("truejetptphi",";p_{T}^{true} [GeV]; #phi [rad]",
-			  30,4,34,50,-3.14159,3.14159);
+			  34,0,34,50,-3.14159,3.14159);
   recojetptz = new TH2F("recojetptz",";z_{reco};p_{T}^{jet,reco} [GeV]",
 			nzbins,zbins,nptbins,ptbins);
   recojetptjt = new TH2F("recojetptjt",
@@ -120,7 +186,7 @@ void instantiateHistos()
   truejetptr = new TH2F("truejetptr",";r_{true}; p_{T}^{jet,true} [GeV]",
 			nrbins,rbins,nptbins,ptbins);
   recojetpteta = new TH2F("recojetpteta", ";p_{T}^{jet,reco} [GeV]; #eta",
-			  30,4,34,50,-3,3);
+			  30,4,34,500,-30,30);
   recojetptphi = new TH2F("recojetptphi",";p_{T}^{jet,reco} [GeV]; #phi",
 			  30,4,34,50,-3.14159,3.14159);
   recotruejetpt = new TH2F("recotruejetpt",";p_{T}^{jet,true} [GeV]; p_{T}^{jet,reco} [GeV]",

@@ -36,6 +36,7 @@ bool TruthEvent::passCuts()
   double y = m_truthEvent->GetTrueY();
   double x = m_truthEvent->GetTrueX();
   double q2 = m_truthEvent->GetTrueQ2();
+  int processId = m_truthEvent->GetProcess();
   
   if(m_verbosity > 3)
     {
@@ -43,7 +44,12 @@ bool TruthEvent::passCuts()
 		<< "," << y << std::endl;
     }
   
-  return x > m_minX && y > m_minY && y < m_maxY && q2 > m_minq2;
+  /// Assume true, in case we don't want to check the process ID
+  bool processCheck = true;
+  if(m_processId > -1)
+    processCheck = processId == m_processId;
+
+  return x > m_minX && y > m_minY && y < m_maxY && q2 > m_minq2 && processCheck;
 }
 void TruthEvent::setScatteredLepton()
 {
@@ -60,7 +66,7 @@ void TruthEvent::setTruthParticles()
 {
 
   if (m_verbosity == -4)
-    cout << "New D0 Event... " << endl;
+    cout << "New D0 Truth Event... " << endl;
 
   BreitFrame breit(*m_truthEvent);
   int chadIndex = -99;
@@ -101,10 +107,11 @@ void TruthEvent::setTruthParticles()
 	continue;
 
       /// Check that eta is within nominal detector acceptance
-      if(fabs(truthParticle->GetEta()) > 3.5)
+      if(fabs(truthParticle->GetEta()) > m_maxPartEta)
 	continue;
-      if(truthParticle->GetPt() < 0.25)
-      	continue;
+
+      if(truthParticle->GetPt() < m_minPartPt)
+	continue;
 
       bool chadChildren = false;
       for (int i = 0; i<chadChildIndices.size(); ++i)
