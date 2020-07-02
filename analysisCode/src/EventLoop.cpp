@@ -77,7 +77,7 @@ int main(int argc, char **argv)
       truenu = truthEvent->GetTrueNu();
 
       TruthEvent trueEvent(*truthEvent);
-      trueEvent.setVerbosity(-4);
+      trueEvent.setVerbosity(0);
       trueEvent.useBreitFrame(breitFrame);
       exchangeBoson = trueEvent.getExchangeBoson();
 
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 	}
 
       SmearedEvent smearedEvent(*truthEvent, *smearEvent, chadChildIndices);
-      smearedEvent.setVerbosity(-4);     
+      smearedEvent.setVerbosity(0);     
       smearedEvent.useBreitFrame(breitFrame);
 
       // if ( !smearedEvent.D0kpiNoSmearFilter() )

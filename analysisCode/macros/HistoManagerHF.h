@@ -28,6 +28,11 @@ void write(std::string infileName)
 {
   std::string outfileName = "../histos/";
 
+ if( infileName.find("100Minclusive") != string::npos )
+   {
+     outfileName += "100Minclusive/";
+   }
+
   if( infileName.find("breit") != string::npos )
     outfileName += "breitJetHistos";
   else 
@@ -44,15 +49,22 @@ void write(std::string infileName)
  if( infileName.find("kpi") != string::npos )
     outfileName += "kpi";
 
- if( infileName.find("_1") != string::npos )
-    outfileName += "_1";
+ if( infileName.find("100Minclusive") != string::npos )
+   {
+     for (int i=0; i<100; ++i)
+       {
+	 string index = "";
+	 string tag = "";
+	 index = std::to_string(i);
+	 tag = "_" + index + ".";
+	 if( infileName.find( tag )!= string::npos )
+	   outfileName += "_" + index;
+       }
+   }
 
- if( infileName.find("_2") != string::npos )
-    outfileName += "_2";
 
   outfileName += ".root";
   outfile = new TFile(outfileName.c_str(),"RECREATE");  
-
 
   sdenergygroomed->Write();
   truthSDjetzg->Write();

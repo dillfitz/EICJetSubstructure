@@ -1,6 +1,6 @@
 #!/bin/csh
 
-setenv HOME /phenix/u/jdosbo
+setenv HOME /phenix/u/dillfitz/
 
 source /etc/csh.login
 foreach i (/etc/profile.d/*.csh)

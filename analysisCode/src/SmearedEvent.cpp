@@ -47,6 +47,8 @@ void SmearedEvent::setSmearedParticles()
   if (m_verbosity == -4)
     std::cout << "New D0 Smeared Event... " << std::endl;
 
+  //std::cout << "Truth N Tracks " << m_truthEvent->GetNTracks() << " Smeared N Tracks " << m_smearEvent->GetNTracks() << std:: endl;
+
   int charmFlag = 0;
   double epsilon = 1e-7;
   BreitFrame breit(*m_truthEvent, *m_smearEvent);
@@ -103,7 +105,7 @@ void SmearedEvent::setSmearedParticles()
 	  
 	  std::cout << "Smeared (lab) : " << px << " " 
 		    << py << " " << pz << " " 
-		    << e << std::endl;
+		    << e <<  std::endl;
 	}
 
       /// We need to handle edge cases from EICsmear where e.g. a track
@@ -171,8 +173,8 @@ void SmearedEvent::setSmearedParticles()
       {
         if( truthParticle->GetIndex() == m_chadChildIndices.at(i) )
 	  {
-	    if ( m_verbosity == -4 )
-	      std::cout << "Child index .. " << m_chadChildIndices.at(i) << std::endl;
+	    // if ( m_verbosity == -4 )
+	    //  std::cout << "Child index .. " << m_chadChildIndices.at(i) << std::endl;
 
 	    chadChildren = true;      
 	  }
@@ -192,10 +194,11 @@ void SmearedEvent::setSmearedParticles()
 	    {
 	      TLorentzVector child1FourVec = child1->Get4Vector();
 	      TLorentzVector truthChild1FourVec = truthChild1->PxPyPzE();
+	      child1FourVec.SetE(std::sqrt(child1FourVec.P()*child1FourVec.P() + truthChild1FourVec.M2()));
 
 	      TLorentzVector child2FourVec = child2->Get4Vector();
-	      TLorentzVector truthChild2FourVec = truthChild2->PxPyPzE();;
-	      
+	      TLorentzVector truthChild2FourVec = truthChild2->PxPyPzE();;	      
+	      child2FourVec.SetE(std::sqrt(child2FourVec.P()*child2FourVec.P() + truthChild2FourVec.M2()));
 	      TLorentzVector *chadFourVec  = new TLorentzVector();
 	      TLorentzVector *truthChadFourVec  = new TLorentzVector();
 
@@ -204,14 +207,14 @@ void SmearedEvent::setSmearedParticles()
 
 	      chadFourVec->SetPxPyPzE( temp.Px(), temp.Py(), temp.Pz(), temp.E() );
 	      truthChadFourVec->SetPxPyPzE( truthTemp.Px(), truthTemp.Py(), truthTemp.Pz(), truthTemp.E() );
-
+	      /*
 	      if ( m_verbosity == -4 )
 		{
 		  std::cout << "truth1 mass : " << truthChild1FourVec.M() << " truth2 mass : " << truthChild2FourVec.M() << " smear1 mass : " << child1FourVec.M() << " smear2 mass : " << child2FourVec.M() << std::endl;
 
 		  std::cout << "truth D0 mass : " << truthChadFourVec->M() << " reco D0 mass : " << chadFourVec->M() << std::endl;
 		}
-
+	      */
 	      if(m_breitFrame)
 		{
 		  breit.labToBreitTruth( truthChadFourVec );
@@ -241,11 +244,22 @@ void SmearedEvent::setSmearedParticles()
       std::cout << "truth test part mass : " << truthTestPartVec.M() << " reco test part mass : " << testPartVec.M() << std::endl;
       */
 
+
+
       TLorentzVector *partFourVec = new TLorentzVector();
       TLorentzVector *truthPartFourVec = new TLorentzVector();
       partFourVec->SetPxPyPzE(px,py,pz,e);
       truthPartFourVec->SetPxPyPzE(truthPx,truthPy,truthPz,truthE);
-
+      /*
+      std::cout << "Truth (lab) : "<<truthParticle->Id() 
+		    << " " <<truthPx << " " 
+		    << truthPy << " " << truthPz
+		<< " " << truthE << " " << truthPartFourVec->M() << std::endl;
+	  
+      std::cout << "Smeared (lab) : " << px << " " 
+		    << py << " " << pz << " " 
+		<< e << " " << partFourVec->M()<< std::endl;
+      */
       if(m_breitFrame)
 	{
 	  breit.labToBreitTruth( truthPartFourVec );
@@ -310,7 +324,10 @@ PseudoJetVec SmearedEvent::getRecoJets(fastjet::ClusterSequence *cs,
   
   PseudoJetVec selectJets = select(allRecoJets);
 
-  return selectJets;
+  PseudoJetVec charmJets = CharmJetTagging(selectJets);
+
+  // return selectJets;
+  return charmJets;
 
 }
 
@@ -419,3 +436,41 @@ bool SmearedEvent::D0kpiNoSmearFilter()
     return true;
 }
 */
+
+PseudoJetVec SmearedEvent::CharmJetTagging(PseudoJetVec recoJets)
+{
+  PseudoJetVec charmJets;
+  std::vector<fastjet::PseudoJet> cons;
+
+  for(int jet = 0; jet < recoJets.size(); ++jet)
+    {
+      cons.clear();
+      cons = recoJets.at(jet).constituents();
+      if ( m_verbosity == -4 ) 
+	{
+	  std::cout << "new jet : ";
+	  std::cout << "num constituents : " << cons.size() << std::endl;
+	}
+      for (int con = 0; con < cons.size(); ++con)
+	{
+	  fastjet::PseudoJet constituent;
+	  constituent = cons.at(con);
+	  TLorentzVector const_vect(constituent.px(), constituent.py(), constituent.pz(), constituent.e());
+
+	  if (fabs(const_vect.M() - 1.864) < 0.03 )
+	    {
+	      
+	      if ( m_verbosity == -4 ) 
+		{
+		  std::cout << " we have a reco level charm tagged jet! " << std::endl;
+		}
+	      charmJets.push_back(recoJets.at(jet));
+	    }      
+	}
+            
+      // Lets just tag D0s since we can readily reconstruct these
+
+    }
+
+  return charmJets;
+}

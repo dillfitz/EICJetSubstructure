@@ -239,27 +239,30 @@ void analyzeMatchedJets(MatchedJets *matchedjets,
 	      truthMatch3.SetXYZ(truthMatch.Px(),
 				 truthMatch.Py(), truthMatch.Pz());
 
-	      float recoz = recoJet3.Dot(recoCon3) / (recoJet3.Mag2());
-	      float truthz = truthJet3.Dot(truthMatch3) / (truthJet3.Mag2());
-	      TVector3 truecross = truthJet3.Cross(truthMatch3);
-	      TVector3 recocross = recoJet3.Cross(recoCon3);
-	      float recojt = recocross.Mag() / recoJet3.Mag();
-	      float truejt = truecross.Mag() / truthJet3.Mag();
-	      float recodphi = checkdPhi(recoJet.Phi() - recoCon.Phi());
-	      float truedphi = checkdPhi(truthJet.Phi() - truthMatch.Phi());
-
-	      truthRecoConstdPhi->Fill(checkdPhi(truthMatch.Phi() - recoCon.Phi()));
-	      truthRecoConstdEta->Fill(truthMatch.Eta() - recoCon.Eta());
-	      truthRecoConstdRap->Fill(truthMatch.Rapidity() - recoCon.Rapidity());
-
-	      float recor = sqrt(pow(recodphi ,2) +
-				 pow(recoJet.Rapidity() - recoCon.Rapidity(), 2));
-	      float truer = sqrt(pow(truedphi ,2) +
-				 pow(truthJet.Rapidity() - truthMatch.Rapidity(),2));
+	      if (truthMatch.M() > 1.5 && truthMatch.M() < 2.0)
+		{
+		  float recoz = recoJet3.Dot(recoCon3) / (recoJet3.Mag2());
+		  float truthz = truthJet3.Dot(truthMatch3) / (truthJet3.Mag2());
+		  TVector3 truecross = truthJet3.Cross(truthMatch3);
+		  TVector3 recocross = recoJet3.Cross(recoCon3);
+		  float recojt = recocross.Mag() / recoJet3.Mag();
+		  float truejt = truecross.Mag() / truthJet3.Mag();
+		  float recodphi = checkdPhi(recoJet.Phi() - recoCon.Phi());
+		  float truedphi = checkdPhi(truthJet.Phi() - truthMatch.Phi());
+		  
+		  truthRecoConstdPhi->Fill(checkdPhi(truthMatch.Phi() - recoCon.Phi()));
+		  truthRecoConstdEta->Fill(truthMatch.Eta() - recoCon.Eta());
+		  truthRecoConstdRap->Fill(truthMatch.Rapidity() - recoCon.Rapidity());
+		  
+		  float recor = sqrt(pow(recodphi ,2) +
+				     pow(recoJet.Rapidity() - recoCon.Rapidity(), 2));
+		  float truer = sqrt(pow(truedphi ,2) +
+				     pow(truthJet.Rapidity() - truthMatch.Rapidity(),2));
 	      
-	      truerecoz->Fill(truthz, recoz);
-	      truerecojt->Fill(truejt,recojt);
-	      truerecor->Fill(truer, recor);
+		  truerecoz->Fill(truthz, recoz);
+		  truerecojt->Fill(truejt,recojt);
+		  truerecor->Fill(truer, recor);
+		}
 	    }
 	  else
 	    {

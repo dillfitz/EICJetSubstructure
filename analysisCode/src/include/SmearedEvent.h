@@ -45,6 +45,9 @@ class SmearedEvent {
 
   PseudoJetVec getRecoJets(fastjet::ClusterSequence *cs,
 			   JetDef jetDef);
+
+  PseudoJetVec CharmJetTagging(PseudoJetVec);
+
   PseudoJetVec getRecoSoftDropJets(PseudoJetVec recoJets, 
 				   SoftDropJetDef sdJetDef);
 

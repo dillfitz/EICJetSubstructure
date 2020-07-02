@@ -124,7 +124,7 @@ void TruthEvent::setTruthParticles()
       }
       if ( chadChildren )
 	continue;
-
+      /*
       if(m_verbosity == -4)
 	{
 	  std::cout << "Truth (lab) : " <<truthParticle->Id() 
@@ -132,7 +132,7 @@ void TruthEvent::setTruthParticles()
 		    << truthParticle->GetPy() << " " << truthParticle->GetPz()
 		    << " " << truthParticle->GetE() << " " <<truthParticle->GetIndex() <<std::endl;	  
 	}
-
+      */
 
       // Transform Particle 4 Vectors to the Breit Frame 
       TLorentzVector *partFourVec = new TLorentzVector( truthParticle->PxPyPzE() );
@@ -397,11 +397,12 @@ void TruthEvent::CharmDecayTagger( const Particle *part, vector<int> &childIndic
       else
 	{
 	  childIndices.push_back( child->GetIndex() );
-
+	  /*
 	  if (m_verbosity == -4 )
 	    std::cout << "Charm Child: " << " PID : " << child->Id()
 		      << " " <<child->GetPt() << " " << child->GetEta() 
 		      << " " <<" Index : " << child->GetIndex() << std::endl;
+	  */
 	}
     }
 
@@ -457,6 +458,11 @@ PseudoJetVec TruthEvent::CharmJetTagging(PseudoJetVec truthJets)
       // Lets just tag D0s since we can readily reconstruct these
       if  (std::find(consPids.begin(), consPids.end(), 421) != consPids.end())
 	{
+
+	  if ( m_verbosity == -4 ) 
+	    {
+	      std::cout << " we have a truth level charm tagged jet! " << std::endl;
+	    }
 	  charmJets.push_back(truthJets.at(jet));
 	}
       

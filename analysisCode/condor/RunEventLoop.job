@@ -4,13 +4,13 @@ Notification    = Never
 Priority        = 1
 
 # Change this path to where ever jetSubstructure lives 
-basepath        = /sphenix/user/jdosbo/EICSmear/git/jetSubstructure/
+basepath        = /phenix/spin/phnxsp01/dillfitz/EIC/EICJetSubstructure/
 
 # Other arguments for script to run
-truthfile       = $(basepath)/MCData/largeJob100MEvents/truth_pE275_pE18_minqsq9_$(Process).root
-smearfile       = $(basepath)/MCData/largeJob100MEvents/smeared_pE275_pE18_minqsq9_$(Process).root
+truthfile       = /sphenix/user/jdosbo/EICSmear/git/jetSubstructure/MCData/largeJob100MEvents/truth_pE275_pE18_minqsq9_$(Process).root
+smearfile       = /sphenix/user/jdosbo/EICSmear/git/jetSubstructure/MCData/largeJob100MEvents/smeared_pE275_pE18_minqsq9_$(Process).root
 breit           = 0
-outfile         = pE275_pE18_minqsq9_$(Process)_breit$(breit).root
+outfile         = pE275_pE18_minqsq9_$(Process)_breit$(breit)_d0kpi.root
 
 Arguments       = $(truthfile) $(smearfile) $(outfile) $(breit) $(basepath)
 
