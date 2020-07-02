@@ -14,9 +14,11 @@
 #include "BreitFrame.h"
 
 using PseudoJetVec = std::vector<fastjet::PseudoJet>;
-using namespace fastjet;
-using namespace std;
 
+/**
+ * This class stores truth information, like final state particles, and also
+ * defines various truth level cuts on those particles
+ */
 class TruthEvent {
   
  public:
@@ -28,10 +30,11 @@ class TruthEvent {
 
   ~TruthEvent(){}
 
-  // member functions //
+  /// Processes event by getting all final state particles 
   void processEvent();
   void setVerbosity(int verb) { m_verbosity = verb; }
 
+  /// Get truth jets from list of final state particles
   PseudoJetVec getTruthJets(fastjet::ClusterSequence *cs,
 			   JetDef jetDef);
   PseudoJetVec getTruthSoftDropJets(PseudoJetVec recoJets, 
@@ -41,6 +44,7 @@ class TruthEvent {
   std::vector<int> getChadChildIndices() { return m_chadChildIndices; }
 
 
+  /// Setters for various cuts
   void useBreitFrame(bool yesorno) { m_breitFrame = yesorno; }
   void setMinQ2(double q2) { m_minq2 = q2; }
   void setMinY(double y) {m_minY = y; }
@@ -49,6 +53,7 @@ class TruthEvent {
   void setProcessId(int id) {m_processId = id;}
   void setMinPartPt(double pt) {m_minPartPt = pt;}
   void setMaxPartEta(double eta) {m_maxPartEta = eta;}
+  /// Return boolean whether or not event passes truth event cuts
   bool passCuts();
   bool CharmEvent();
   bool disCharmEvent();
@@ -58,7 +63,7 @@ class TruthEvent {
   // Some of these should maybe be private... i.e. DecayFilter & Tagger //
   bool CharmDecayFilter( const Particle *part );
   bool D0kpiDecayFilter( const Particle *part );
-  void CharmDecayTagger( const Particle *part, vector<int> &childIndices );
+  void CharmDecayTagger( const Particle *part, std::vector<int> &childIndices );
   void PrintCharmEvent();
   PseudoJetVec CharmJetTagging(PseudoJetVec);
 
@@ -66,6 +71,7 @@ class TruthEvent {
   TLorentzVector getExchangeBoson();
 
  private:
+  /// Member variables defining the truth level cuts
   int m_processId = -1;
   double m_minq2;
   double m_minY;

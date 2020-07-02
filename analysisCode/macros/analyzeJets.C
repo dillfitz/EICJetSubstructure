@@ -93,12 +93,21 @@ void recoJetAnalysis(JetConstVec *recojets)
 	  float jt = cross.Mag() / jet3.Mag();
 	  float r = sqrt(pow(checkdPhi(jet.Phi() - con.Phi()), 2) + pow(jet.Rapidity() - con.Rapidity(),2));
 
-	  recojetptz->Fill(z, jetpt);
-	  recojetptjt->Fill(jt, jetpt);
-	  recojetptr->Fill(r, jetpt);
+	  float mass = con.M();
+	  /// Make a crude selection on charged hadrons
+	  bool pion = fabs(mass - 0.14) < 0.03;
+	  bool kaon = fabs(mass - 0.493) < 0.03;
+	  bool proton = fabs(mass - 0.938) < 0.03;
 
+	  if(pion || kaon || proton)
+	    {
+	      recojetptz->Fill(z, jetpt);
+	      recojetptjt->Fill(jt, jetpt);
+	      recojetptr->Fill(r, jetpt);
+	    }
 	}
     }
+
   nrecojets->Fill(njets);
 }
 
@@ -161,16 +170,13 @@ void loop()
 	std::cout << "Processed " << i << " events " << std::endl;
       jettree->GetEntry(i);
       
+      /// Analyze various branches in the jet tree
       recoJetAnalysis(recoJets);
-
       float highestTruthJetPt = truthJetAnalysis(truthJets);
-
       analyzeMatchedJets(matchedJets, matchedParticles);
-
       recoSDJetAnalysis(recoSDJets);
       truthSDJetAnalysis(truthSDJets);
       analyzeMatchedSDJets(matchedSDJets);
-
       compareAKTSDTruthJets(truthJets, truthSDJets);
 
       /// Event level kinematics
@@ -178,7 +184,6 @@ void loop()
       truerecy->Fill(truey,recy);
       truerecq2->Fill(trueq2,recq2);
       trueQ2x->Fill(truex,trueq2);
-  
       trueQ2pT->Fill(trueq2, highestTruthJetPt);
     
       /// Make some event level histograms of jets+exchange boson
@@ -186,8 +191,17 @@ void loop()
 	{
 	  TLorentzVector jetVec;
 	  jetVec = truthJets->at(jet).first;
-	  if(jetVec.Pt() > 1)
-	    continue;
+
+	  /// Require this to check if scattered quark jet and photon
+	  /// are aligned on z axis and/or such that cos(theta)~1
+	  if(breitFrame){
+	    if(jetVec.Pt() > 1)
+	      continue;
+	  }
+	  else
+	    if(jetVec.Pt() < minjetpt)
+	      continue;
+	  
 	  truthjetbosonphi->Fill(truthExchangeBoson->Phi(),
 				 jetVec.Phi());
 	  truthjetbosoneta->Fill(truthExchangeBoson->Eta(),
@@ -252,6 +266,12 @@ void analyzeMatchedJets(MatchedJets *matchedjets,
       
       recotruejetp->Fill(truthJet.P(), recoJet.P());
       recotruejete->Fill(truthJet.E(), recoJet.E());
+
+      for(int pb = 0; pb < npbins; ++pb)
+	{
+	  if(truthJet.E() > pbins[pb] && truthJet.E() <= pbins[pb+1])
+	    jes[pb]->Fill(recoJet.E() / truthJet.E());
+	}
 
       /// Match constituents up
       for(int j = 0; j< recoConst.size(); j++)
