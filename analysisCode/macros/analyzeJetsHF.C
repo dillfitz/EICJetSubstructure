@@ -2,6 +2,8 @@
 #include "HistoManagerHF.h"
 const float pion_mass = 0.13957;
 const float kaon_mass = 0.4936;
+int verbosity = 0;
+
 
 void analyzeJetsHF(std::string file)
 {
@@ -121,6 +123,9 @@ void loop()
 
   for(int i=0; i<jettree->GetEntries(); i++)
     {
+      if (verbosity == 1)
+	cout << "New Event... " << endl;
+
       if(i%10000 == 0)
 	std::cout << "Processed " << i << " events " << std::endl;
       jettree->GetEntry(i);
@@ -208,6 +213,10 @@ void analyzeMatchedJets(MatchedJets *matchedjets,
 		 matchreco.Pz() == recoCon.Pz())
 		{
 		  truthMatch = matchedparticles->at(k).first;
+		  if (verbosity == 1)
+		    if (truthMatch.M() > 1.5 && truthMatch.M() < 2.0)
+		      cout << " reco D0 mass : " <<  matchreco.M() << " truth D0 mass " << truthMatch.M() << endl;
+
 		}
 	    }
 
@@ -216,13 +225,31 @@ void analyzeMatchedJets(MatchedJets *matchedjets,
 	  for(int k = 0; k < truthConst.size(); k++)
 	    {
 	      TLorentzVector truthCon = truthConst.at(k);
-	      if(truthCon.Px() == truthMatch.Px() &&
-		 truthCon.Py() == truthMatch.Py() &&
-		 truthCon.Pz() == truthMatch.Pz())
+	      // if(truthCon.Px() == truthMatch.Px() &&
+	      // truthCon.Py() == truthMatch.Py() &&
+	      // truthCon.Pz() == truthMatch.Pz())
+
+	      if(fabs(truthCon.Px() -  truthMatch.Px()) < 0.00001 &&
+		 fabs(truthCon.Py() -  truthMatch.Py()) < 0.00001 &&
+		 fabs(truthCon.Pz() -  truthMatch.Pz()) < 0.00001)
 		{
+
+		if (truthMatch.M() > 1.5 && truthMatch.M() < 2.0)
+		  {
+		    if (verbosity == 1)
+		      cout << " Found a matched D0 " << endl;
+		  }
 		  matched = true;
 		  break;
 		}
+	      else
+		if (verbosity == 1)
+		  if (truthMatch.M() > 1.5 && truthMatch.M() < 2.0)
+		    {
+		      cout << " truthMatchP : (" << truthMatch.Px() <<" ,"<< truthMatch.Py() << " ," << truthMatch.Pz() <<" )" << " truthMatchM : " << truthMatch.M() << endl;
+		      cout << " truthConP : (" << truthCon.Px() <<" ,"<< truthCon.Py() << " ," << truthCon.Pz() <<" )" << " truthConM : " << truthCon.M() <<  endl;
+
+		    }
 	    }
 	  if(matched)
 	    {
@@ -262,6 +289,13 @@ void analyzeMatchedJets(MatchedJets *matchedjets,
 		  truerecoz->Fill(truthz, recoz);
 		  truerecojt->Fill(truejt,recojt);
 		  truerecor->Fill(truer, recor);
+
+		  if (verbosity == 1)
+		    cout << " D0 info written to histo " << endl;
+
+		}
+	      else
+		{
 		}
 	    }
 	  else
@@ -273,6 +307,7 @@ void analyzeMatchedJets(MatchedJets *matchedjets,
 	}
     }
 
+  // cout << "number of unmatched jets... " << nomatch << endl
 }
 
 void recoSDJetAnalysis(JetConstVec *recojets)
