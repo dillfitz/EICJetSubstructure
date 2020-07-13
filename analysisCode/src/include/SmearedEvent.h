@@ -20,14 +20,20 @@ using JetConstVec = std::vector<JetConstPair>;
 using TLorentzPair = std::pair<TLorentzVector, TLorentzVector>;
 using TLorentzPairVec = std::vector<TLorentzPair>;
 
+/**
+ * This class is the analagous class to TruthEvent but for smeared particles.
+ * The functionality is largely the same as TruthEvent, but with some additional
+ * considerations for smeared particles from EICSmear.
+ */
 class SmearedEvent {
   
  public:
   SmearedEvent(){}
-  SmearedEvent(erhic::EventPythia &truthEvent, Smear::Event &smearEvent)
+ SmearedEvent(erhic::EventPythia &truthEvent, Smear::Event &smearEvent, std::vector<int> chadChildIndices)
    : m_truthEvent(&truthEvent)
-   , m_smearEvent(&smearEvent)
-  {}
+    , m_smearEvent(&smearEvent)
+    , m_chadChildIndices(chadChildIndices)
+    {}
 
   ~SmearedEvent(){}
 
@@ -36,35 +42,50 @@ class SmearedEvent {
   void setVerbosity(int verb) { m_verbosity = verb; }
   TLorentzVector getExchangeBoson();
 
-
+  /// Set some event level criteria
+  void setMaxPartEta(double eta){m_maxPartEta = eta;}
+  void setMinPartPt(double pt){m_minPartPt = pt;}
   void setScatteredLepton();
   void setSmearedParticles();
+
+  /// Returns a TLorentzPairVec matching truth and smeared particles used
+  // in the jet clustering. Useful for identifying e.g. response matrices
   TLorentzPairVec getMatchedParticles();
 
   PseudoJetVec getRecoJets(fastjet::ClusterSequence *cs,
 			   JetDef jetDef);
+
+  PseudoJetVec CharmJetTagging(PseudoJetVec);
+
   PseudoJetVec getRecoSoftDropJets(PseudoJetVec recoJets, 
 				   SoftDropJetDef sdJetDef);
 
+  /// Match truth and reco jets via their deltaR separation
   std::vector<PseudoJetVec> matchTruthRecoJets(PseudoJetVec truthjets, 
 					       PseudoJetVec recojets);
 
   void useBreitFrame(bool yesorno) { m_breitFrame = yesorno; }
+
+  // bool D0kpiNoSmearFilter();
 
  private:
   /// Need truth event for identifying only final state particles
   erhic::EventPythia *m_truthEvent;
   Smear::Event *m_smearEvent;
 
+  double m_maxPartEta;
+  double m_minPartPt;
+
   const Smear::ParticleMCS *m_scatLepton;
   bool m_breitFrame;
   std::vector<PseudoJetVec> m_matchedJets;
+  std::vector<int> m_chadChildIndices;
   
+
+  /// Vectors of particles to be kept
   PseudoJetVec m_particles;
   PseudoJetVec m_truthParticles;
   int m_verbosity = 0;
-
- 
 
 };
 

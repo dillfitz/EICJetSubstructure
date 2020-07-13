@@ -1,6 +1,6 @@
 #!/bin/csh
 
-setenv HOME /phenix/u/jdosbo
+setenv HOME /phenix/u/dillfitz
 
 source /etc/csh.login
 foreach i (/etc/profile.d/*.csh)
@@ -26,5 +26,6 @@ echo "electron beam energy: "$4
 echo "Min q2: "$5
 echo "nEvents: "$6
 echo "base path: "$7
+echo "process ID "$8
 
-py runSimWorkflow.py $1 $2 $3 $4 $5 $6 $7
+python runSimWorkflow.py $1 $2 $3 $4 $5 $6 $7 $8
