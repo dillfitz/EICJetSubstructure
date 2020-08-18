@@ -13,6 +13,9 @@
 #include "SoftDropJetDef.h"
 #include "BreitFrame.h"
 
+using namespace std;
+using namespace fastjet;
+
 using PseudoJetVec = std::vector<fastjet::PseudoJet>;
 
 /**

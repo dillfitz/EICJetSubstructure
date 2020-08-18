@@ -31,6 +31,7 @@
 #include "eicsmear/smear/Smearer.h"
 #include "eicsmear/smear/ParticleMCS.h"
 #include "eicsmear/smear/PerfectID.h"
+#include "eicsmear/smear/ParticleID.h"
 #include <eicsmear/smear/Smear.h>
 #include <eicsmear/erhic/ParticleMC.h>
 #include "Math/Vector4D.h"
@@ -207,10 +208,10 @@ Smear::Detector BuildHandBookDetector() {
 
   // TODO: Add PID
   // Could turn on perfect PID
-  // Smear::Acceptance::Zone acceptall(etaToTheta(15.),etaToTheta(-15.));
-  // Smear::PerfectID pid;
-  // pid.Accept.AddZone(acceptall);
-  // det.AddDevice( pid );
+  Smear::Acceptance::Zone acceptall(ThetaFromEta(3.5),ThetaFromEta(-3.5));
+  Smear::PerfectID pid;
+  pid.Accept.AddZone(acceptall);
+  det.AddDevice( pid );
   
   // Hadronic  Calorimeters
   // ----------------------

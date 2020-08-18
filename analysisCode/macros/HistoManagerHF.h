@@ -23,6 +23,7 @@ TH1 *truenjetevent, *reconjetevent;
 TH1 *trueconstmass, *truepairmass, *truethreebodymass;
 TH1 *recoconstmass;
 TH1 *truejetmass, *recojetmass;
+TH2 *truejetnconstpt, *recojetnconstpt;
 
 void write(std::string infileName)
 {
@@ -114,6 +115,8 @@ void write(std::string infileName)
   recoconstmass->Write();
   //truepairmass->Write();
   //truethreebodymass->Write();
+  truejetnconstpt->Write();
+  recojetnconstpt->Write();
 
   outfile->Write();
   outfile->Close();
@@ -222,5 +225,7 @@ void instantiateHistos()
 
   truethreebodymass = new TH1F("truethreebodymass", ";M_{pair} [GeV]; ", 600, 1.8, 2.4);
 
-
+  recojetnconstpt = new TH2F ("recojetnconstpt", ";N_{const}^{reco}; p_{T}^{reco} [GeV] ", 20, 0, 20, 26, 4., 30.);
+  
+  truejetnconstpt = new TH2F ("truejetnconstpt", ";N_{const}^{true}; p_{T}^{true} [GeV] ", 20, 0, 20, 26, 4., 30.);
 }

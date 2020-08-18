@@ -276,6 +276,8 @@ void SmearedEvent::setSmearedParticles()
 		    << " " << partFourVec->E() << " mass : " << partFourVec->M() << std::endl;	      
 	}
 
+      std::cout << "Smeared PID : " << particle->Id() << std::endl;
+
       m_particles.push_back(fastjet::PseudoJet(partFourVec->Px(),
 					       partFourVec->Py(),
 					       partFourVec->Pz(),

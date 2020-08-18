@@ -38,6 +38,7 @@ void recoJetAnalysis(JetConstVec *recojets)
       recojetpteta->Fill(jetpt, jetVec.Eta());
       recojetptphi->Fill(jetpt, jetVec.Phi());
       recojetmass->Fill( jetVec.M() );
+      recojetnconstpt->Fill( recojets->at(jet).second.size(), jetpt );
 
 
       TVector3 jet3;
@@ -87,6 +88,8 @@ double truthJetAnalysis(JetConstVec *truthjets)
       truejetptphi->Fill(jetVec.Pt(), jetVec.Phi());
       truejetpteta->Fill(jetVec.Pt(), jetVec.Eta());
       truejetmass->Fill( jetVec.M() );
+      truejetnconstpt->Fill( truthjets->at(jet).second.size(), jetVec.Pt() );
+
 
       TVector3 jet3;
       jet3.SetXYZ(jetVec.Px(), jetVec.Py(), jetVec.Pz());
