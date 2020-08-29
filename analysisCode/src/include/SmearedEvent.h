@@ -8,6 +8,7 @@
 #include <eicsmear/erhic/EventPythia.h>
 
 #include <TLorentzVector.h>
+#include <TF1.h>
 
 #include "JetDef.h"
 #include "SoftDropJetDef.h"
@@ -33,7 +34,10 @@ class SmearedEvent {
    : m_truthEvent(&truthEvent)
     , m_smearEvent(&smearEvent)
     , m_chadChildIndices(chadChildIndices)
-    {}
+    , m_smearHCal(false)
+  {
+    m_HCalRes = new TF1("hcalres","sqrt(0.1*0.1+0.5*0.5/x)",0.1,275);
+  }
 
   ~SmearedEvent(){}
 
@@ -41,12 +45,15 @@ class SmearedEvent {
   void processEvent();
   void setVerbosity(int verb) { m_verbosity = verb; }
   TLorentzVector getExchangeBoson();
+  TLorentzVector getScatteredLepton(){return m_scatLepton->Get4Vector();}
 
   /// Set some event level criteria
   void setMaxPartEta(double eta){m_maxPartEta = eta;}
   void setMinPartPt(double pt){m_minPartPt = pt;}
   void setScatteredLepton();
   void setSmearedParticles();
+  void setSmearedParticlesPid();
+  int pidDetectors(double eta, double p, double m, double &e, int truthPid);
 
   /// Returns a TLorentzPairVec matching truth and smeared particles used
   // in the jet clustering. Useful for identifying e.g. response matrices
@@ -64,10 +71,12 @@ class SmearedEvent {
   std::vector<PseudoJetVec> matchTruthRecoJets(PseudoJetVec truthjets, 
 					       PseudoJetVec recojets);
 
-  void useBreitFrame(bool yesorno) { m_breitFrame = yesorno; }
+
 
   // bool D0kpiNoSmearFilter();
 
+  void useBreitFrame(bool breit) { m_breitFrame = breit; }
+  void smearHCal(bool smear) { m_smearHCal = smear;}
  private:
   /// Need truth event for identifying only final state particles
   erhic::EventPythia *m_truthEvent;
@@ -81,6 +90,9 @@ class SmearedEvent {
   std::vector<PseudoJetVec> m_matchedJets;
   std::vector<int> m_chadChildIndices;
   
+
+  TF1 *m_HCalRes;
+  bool m_smearHCal;
 
   /// Vectors of particles to be kept
   PseudoJetVec m_particles;

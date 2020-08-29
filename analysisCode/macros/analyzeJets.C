@@ -50,8 +50,11 @@ void getLumi()
     {
       runtree->GetEntry(i);
       h_lumi->Fill(lumi);
+      std::cout << "lumi is " << lumi << std::endl;
       h_eventsGen->Fill(events);
+      std::cout<<"events " << events<<std::endl;
       h_xsec->Fill(xsec);
+      std::cout << "xsec is " << xsec << std::endl;
       
     }
 
@@ -101,9 +104,13 @@ void recoJetAnalysis(JetConstVec *recojets)
 
 	  if(pion || kaon || proton)
 	    {
-	      recojetptz->Fill(z, jetpt);
-	      recojetptjt->Fill(jt, jetpt);
-	      recojetptr->Fill(r, jetpt);
+	      if(con.Pt() > minconstpt)
+		{
+		  h_constpT->Fill(con.P(), con.Eta());
+		  recojetptz->Fill(z, jetpt);
+		  recojetptjt->Fill(jt, jetpt);
+		  recojetptr->Fill(r, jetpt);
+		}
 	    }
 	}
     }
@@ -125,6 +132,9 @@ double truthJetAnalysis(JetConstVec *truthjets)
       
       if(jetVec.Pt() < minjetpt)
 	continue;
+
+      h_scatJet->Fill(jetVec.Theta(), jetVec.P());
+
       if(fabs(jetVec.Eta()) > maxjeteta)
 	continue;
       
@@ -149,11 +159,13 @@ double truthJetAnalysis(JetConstVec *truthjets)
 	  float z = jet3.Dot(con3) / (jet3.Mag2());
 	  float jt = cross.Mag() / jet3.Mag();
 	  float r = sqrt(pow(checkdPhi(jetVec.Phi() - con.Phi()), 2) + pow(jetVec.Eta() - con.Eta(),2));
-
-	  truejetptz->Fill(z, jetpt);
-	  truejetptjt->Fill(jt, jetpt);
-	  truejetptr->Fill(r, jetpt);
-	} 
+	  if(con.Pt() > minconstpt)
+	    {
+	      truejetptz->Fill(z, jetpt);
+	      truejetptjt->Fill(jt, jetpt);
+	      truejetptr->Fill(r, jetpt);
+	    } 
+	}
     }
 
   ntruthjets->Fill(njets);
@@ -183,9 +195,14 @@ void loop()
       truerecx->Fill(truex,recx);
       truerecy->Fill(truey,recy);
       truerecq2->Fill(trueq2,recq2);
-      trueQ2x->Fill(truex,trueq2);
+      if(highestTruthJetPt>5.)
+	trueQ2x->Fill(truex,trueq2);
       trueQ2pT->Fill(trueq2, highestTruthJetPt);
-    
+      if(highestTruthJetPt > 5)
+	h_processID->Fill(processId);
+     
+      h_scatLept->Fill(scatteredLepton->Theta(), scatteredLepton->P());
+
       /// Make some event level histograms of jets+exchange boson
       for(int jet = 0; jet < truthJets->size(); jet++)
 	{
@@ -295,9 +312,9 @@ void analyzeMatchedJets(MatchedJets *matchedjets,
 	  for(int k = 0; k < truthConst.size(); k++)
 	    {
 	      TLorentzVector truthCon = truthConst.at(k);
-	      if(truthCon.Px() == truthMatch.Px() &&
-		 truthCon.Py() == truthMatch.Py() &&
-		 truthCon.Pz() == truthMatch.Pz())
+	      if(fabs(truthCon.Px() - truthMatch.Px()) < 0.0001 &&
+		 fabs(truthCon.Py() - truthMatch.Py()) < 0.0001 &&
+		 fabs(truthCon.Pz() - truthMatch.Pz()) < 0.0001)
 		{
 		  matched = true;
 		  break;
@@ -337,10 +354,12 @@ void analyzeMatchedJets(MatchedJets *matchedjets,
 				 pow(recoJet.Rapidity() - recoCon.Rapidity(), 2));
 	      float truer = sqrt(pow(truedphi ,2) +
 				 pow(truthJet.Rapidity() - truthMatch.Rapidity(),2));
-	      
-	      truerecoz->Fill(truthz, recoz);
-	      truerecojt->Fill(truejt,recojt);
-	      truerecor->Fill(truer, recor);
+	      if(truthMatch.Pt() > minconstpt)
+		{
+		  truerecoz->Fill(truthz, recoz);
+		  truerecojt->Fill(truejt,recojt);
+		  truerecor->Fill(truer, recor);
+		}
 	    }
 	  else
 	    {
@@ -478,6 +497,8 @@ void setupTree()
   jettree->SetBranchAddress("matchedParticles", &matchedParticles);
   jettree->SetBranchAddress("smearExchangeBoson", &smearedExchangeBoson);
   jettree->SetBranchAddress("truthR1SDJets", &truthSDJets);
+  jettree->SetBranchAddress("processId", &processId);
+  jettree->SetBranchAddress("scatteredLepton", &scatteredLepton);
 }
 
 float checkdPhi(float dphi)

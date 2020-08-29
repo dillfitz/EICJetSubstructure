@@ -208,11 +208,45 @@ Smear::Detector BuildHandBookDetector() {
 
   // TODO: Add PID
   // Could turn on perfect PID
+  /*
   Smear::Acceptance::Zone acceptall(ThetaFromEta(3.5),ThetaFromEta(-3.5));
   Smear::PerfectID pid;
   pid.Accept.AddZone(acceptall);
   det.AddDevice( pid );
-  
+  */
+
+  Smear::Acceptance::Zone zone_gasRICH( ThetaFromEta( 3.4 ), ThetaFromEta( 1.24 ));
+  Smear::ParticleID gasRICH_KPi("/phenix/spin/phnxsp01/dillfitz/EIC/EICJetSubstructure/smear/PIDMatrixFiles/gasRICH_KPiPIDMatrix.dat");
+  Smear::ParticleID gasRICH_ePi("/phenix/spin/phnxsp01/dillfitz/EIC/EICJetSubstructure/smear/PIDMatrixFiles/gasRICH_ePiPIDMatrix.dat");
+  gasRICH_KPi.Accept.AddZone(zone_gasRICH);
+  gasRICH_ePi.Accept.AddZone(zone_gasRICH);
+  det.AddDevice(gasRICH_KPi);
+  det.AddDevice(gasRICH_ePi);
+
+  /*
+  Smear::Acceptance::Zone zone_hside_mRICH( ThetaFromEta( 1.85 ), ThetaFromEta( 1.10 ));
+  Smear::ParticleID hside_mRICH_KPi("/phenix/spin/phnxsp01/dillfitz/EIC/EICJetSubstructure/smear/PIDMatrixFiles/mRICH_KPiPIDMatrix.dat");
+  Smear::ParticleID hside_mRICH_ePi("/phenix/spin/phnxsp01/dillfitz/EIC/EICJetSubstructure/smear/PIDMatrixFiles/mRICH_ePiPIDMatrix.dat");
+  hside_mRICH_KPi.Accept.AddZone(zone_hside_mRICH);
+  hside_mRICH_ePi.Accept.AddZone(zone_hside_mRICH);
+  det.AddDevice(hside_mRICH_KPi);
+  det.AddDevice(hside_mRICH_ePi);
+  */
+  Smear::Acceptance::Zone zone_DIRC( ThetaFromEta( 1.24 ), ThetaFromEta( -1.4 ));
+  Smear::ParticleID DIRC("/phenix/spin/phnxsp01/dillfitz/EIC/EICJetSubstructure/smear/PIDMatrixFiles/DIRCPIDMatrix.dat");
+  DIRC.Accept.AddZone(zone_DIRC);
+  det.AddDevice(DIRC);
+
+  Smear::Acceptance::Zone zone_eside_mRICH( ThetaFromEta( -1.4 ), ThetaFromEta( -3.4 ));
+  Smear::ParticleID eside_mRICH_KPi("/phenix/spin/phnxsp01/dillfitz/EIC/EICJetSubstructure/smear/PIDMatrixFiles/mRICH_KPiPIDMatrix.dat");
+  Smear::ParticleID eside_mRICH_ePi("/phenix/spin/phnxsp01/dillfitz/EIC/EICJetSubstructure/smear/PIDMatrixFiles/mRICH_ePiPIDMatrix.dat");
+  eside_mRICH_KPi.Accept.AddZone(zone_eside_mRICH);
+  eside_mRICH_ePi.Accept.AddZone(zone_eside_mRICH);
+  det.AddDevice(eside_mRICH_KPi);
+  det.AddDevice(eside_mRICH_ePi);
+
+
+
   // Hadronic  Calorimeters
   // ----------------------
   // IMPORTANT: The Handbook table 2 does not provide constant terms,

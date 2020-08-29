@@ -14,6 +14,7 @@ void TruthEvent::processEvent()
 
   setScatteredLepton();
   setTruthParticles();
+  setTruthD0Decay();
 
 }
 
@@ -156,6 +157,36 @@ void TruthEvent::setTruthParticles()
     }
 
   return;
+}
+
+void TruthEvent::setTruthD0Decay()
+{
+  BreitFrame breit(*m_truthEvent);
+  for(int part = 0; part < m_truthEvent->GetNTracks(); ++part)
+    {
+      
+      const Particle *truthParticle = m_truthEvent->GetTrack(part);
+
+      for (int i = 0; i<m_chadChildIndices.size(); ++i)
+	{
+	  if( truthParticle->GetIndex() == m_chadChildIndices.at(i) )
+	    {
+	      // do yo thang... 
+	      // cout << " chad child ID : " << m_chadChildIndices.at(i) << " PID : " << truthParticle->GetPdgCode() <<  endl;
+	      double px = truthParticle->GetPx();
+	      double py = truthParticle->GetPy();
+	      double pz = truthParticle->GetPz();
+	      double e  = truthParticle->GetE();
+	      //PseudoJet decaypart(px, py, pz, e);
+	      TLorentzVector decaypart(px, py, pz, e);
+
+	      m_d0DecayParticles.push_back(decaypart);
+	      	      
+	    }
+	  
+	}
+      
+    }
 }
 
 PseudoJetVec TruthEvent::getTruthJets(fastjet::ClusterSequence *cs, 

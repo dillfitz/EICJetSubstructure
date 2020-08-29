@@ -23,6 +23,7 @@ void loop();
 void write();
 
 
+void d0DecayPartsAnalysis(TLorentzVectorVec *d0parts);
 void recoJetAnalysis(JetConstVec *recojets);
 /// Returns highest truth jet pt in event
 double truthJetAnalysis(JetConstVec *truthjets);
@@ -38,6 +39,7 @@ float checkdPhi(float dphi);
 
 TLorentzPairVec *matchedParticles;
 TLorentzVector *truthExchangeBoson, *smearedExchangeBoson;
+TLorentzVectorVec *d0Parts;
 JetConstVec *truthJets, *recoJets, *recoSDJets, *truthSDJets;
 MatchedJets *matchedJets, *matchedSDJets;
 double recx, recy, recq2, truey, truex, trueq2;

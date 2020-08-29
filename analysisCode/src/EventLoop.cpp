@@ -89,7 +89,7 @@ int main(int argc, char **argv)
       trueEvent.setVerbosity(0);
       trueEvent.useBreitFrame(breitFrame);
       exchangeBoson = trueEvent.getExchangeBoson();
-
+     
       /// Set event level cuts
       trueEvent.setMinQ2(16);
       trueEvent.setMinY(0.05);
@@ -117,12 +117,16 @@ int main(int argc, char **argv)
       recq2 = smearEvent->GetQ2();
       recnu = smearEvent->GetNu();
  
+      /// Set particle vectors in trueEvent
       trueEvent.processEvent();
 
       chadChildIndices = trueEvent.getChadChildIndices();
 
-      /// Set particle vectors in trueEvent
-      trueEvent.processEvent();
+      scatteredE = trueEvent.getScatteredLepton();
+
+
+      // Grab the D0 Children //
+      truthD0DecayParts = trueEvent.getD0DecayParticles();
 
       /// Perform truth jet clustering
       PseudoJetVec fjtruthR1Jets = trueEvent.getTruthJets(truthcs, R1jetdef);
@@ -143,11 +147,16 @@ int main(int argc, char **argv)
       //  cout << " died here... " << endl;
       //  continue;
       //}
+      /// We can smear out the energy of tracks that are not matched to a calo cluster to 
+      /// get a better representation of a particle flow algorithm
+      /// hcal resolution is set in smearedEvent constructor to 10% + 50%/E
+      smearedEvent.smearHCal(false);
       smearedEvent.setMaxPartEta(3.5);
       smearedEvent.setMinPartPt(0.25);
       /// Set smeared particle vectors, apply cuts to particles
       smearedEvent.processEvent();
 
+      smearScatteredE = smearedEvent.getScatteredLepton();
       smearExchangeBoson = smearedEvent.getExchangeBoson();
       matchedParticles = smearedEvent.getMatchedParticles();      
       
@@ -215,6 +224,7 @@ void setupRunTree()
 void setupJetTree()
 {
   jetTree->Branch("processId",&processId,"processId/I");
+  jetTree->Branch("truthD0DecayParts", &truthD0DecayParts);
   jetTree->Branch("truthR1Jets", &truthR1Jets);
   jetTree->Branch("recoR1Jets", &recoR1Jets);
   jetTree->Branch("recoR1SDJets", &recoR1SDJets);
@@ -232,6 +242,9 @@ void setupJetTree()
   jetTree->Branch("recnu",&recnu,"recnu/D");
   jetTree->Branch("matchedParticles",&matchedParticles);
   jetTree->Branch("truthR1SDJets", &truthR1SDJets);
+  jetTree->Branch("scatteredLepton", &scatteredE);
+  jetTree->Branch("smearedScatteredLepton", &smearScatteredE);
+
   return;
 }
 

@@ -111,6 +111,7 @@ double truthJetAnalysis(JetConstVec *truthjets)
 	      truejetptz->Fill(z, jetpt);
 	      truejetptjt->Fill(jt, jetpt);
 	      truejetptr->Fill(r, jetpt);
+	      trueD0peta->Fill(con.P(),con.Eta());
 	    }
 
 	  trueconstmass->Fill(con.M());
@@ -120,6 +121,18 @@ double truthJetAnalysis(JetConstVec *truthjets)
 
   return jetpt;
 }
+
+void d0DecayPartAnalysis(TLorentzVectorVec *d0parts)
+{
+  for (int part=0; part<d0parts->size(); ++part)
+  {
+    double p = d0parts->at(part).P();
+    double eta = d0parts->at(part).Eta();
+    trued0decaypartspeta->Fill(p, eta);
+  }
+  
+}
+
 
 void loop()
 {
@@ -133,6 +146,9 @@ void loop()
 	std::cout << "Processed " << i << " events " << std::endl;
       jettree->GetEntry(i);
       
+
+      d0DecayPartAnalysis(d0Parts);
+
       recoJetAnalysis(recoJets);
 
       float highestTruthJetPt = truthJetAnalysis(truthJets);
@@ -394,6 +410,7 @@ void setupTree()
   jettree->SetBranchAddress("truex", &truex);
   jettree->SetBranchAddress("truey", &truey);
   jettree->SetBranchAddress("trueq2", &trueq2);
+  jettree->SetBranchAddress("truthD0DecayParts", &d0Parts);
   jettree->SetBranchAddress("truthR1Jets", &truthJets);
   jettree->SetBranchAddress("recoR1Jets", &recoJets);
   jettree->SetBranchAddress("recoR1SDJets", &recoSDJets);

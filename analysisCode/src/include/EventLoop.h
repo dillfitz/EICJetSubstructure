@@ -49,13 +49,14 @@ std::vector<std::vector<JetConstPair>>
 /// Note - for SDJets, the first two entries in the constituent vector, i.e.
 /// first two entries in the second of the pair list are the two subjets
 JetConstVec truthR1Jets, recoR1Jets, recoR1SDJets, truthR1SDJets;
+TLorentzVectorVec truthD0DecayParts;
 
 double truex, truey, trueq2, truenu;
 double recx, recy, recq2, recnu;
 int processId;
 float nEventsTried, totalCrossSection, nEventsGen;
 float integratedLumi;
-TLorentzVector exchangeBoson, smearExchangeBoson;
+TLorentzVector exchangeBoson, smearExchangeBoson, scatteredE, smearScatteredE;
 
 /// This structure is a vector of vector of matched truth-reco jets. 
 /// Each entry of std::vector<JetConstPair> is length 2 - first the truth

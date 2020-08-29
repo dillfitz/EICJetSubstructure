@@ -7,7 +7,7 @@ TH2 *truerecoz, *truerecojt, *truerecor;
 TH2 *recojetpteta, *recojetptphi;
 TH2 *truerecx, *truerecy, *truerecq2;
 TH2 *trueQ2x, *trueQ2pT;
-TH2 *truejetpteta, *truejetptphi;
+TH2 *truejetpteta, *truejetptphi, *trueD0peta;
 TH2 *recojetptz, *recojetptjt, *recojetptr;
 TH2 *truejetptz, *truejetptjt, *truejetptr;
 TH2 *recojetptetatruejetpt;
@@ -24,6 +24,7 @@ TH1 *trueconstmass, *truepairmass, *truethreebodymass;
 TH1 *recoconstmass;
 TH1 *truejetmass, *recojetmass;
 TH2 *truejetnconstpt, *recojetnconstpt;
+TH2 *trued0decaypartspeta;
 
 void write(std::string infileName)
 {
@@ -117,6 +118,9 @@ void write(std::string infileName)
   //truethreebodymass->Write();
   truejetnconstpt->Write();
   recojetnconstpt->Write();
+  trueD0peta->Write();
+  trued0decaypartspeta->Write();
+
 
   outfile->Write();
   outfile->Close();
@@ -158,7 +162,9 @@ void instantiateHistos()
   trueQ2pT = new TH2F("trueq2pt",";Q_{true}^{2} [GeV^{2}]; p_{T}^{true} [GeV]",
 		      nq2bins,qbins,nptbins,ptbins);
   truejetpteta = new TH2F("truejetpteta",";p_{T}^{true} [GeV]; #eta",
-			  30,4,34,50,-3,3);
+			  30,4,34,70,-3.5,3.5);
+  trueD0peta = new TH2F("trueD0peta",";p^{true}_{D^{0}} [GeV]; #eta",
+			  100,0,100,70,-3.5,3.5);
   truejetptphi = new TH2F("truejetptphi",";p_{T}^{true} [GeV]; #phi [rad]",
 			  30,4,34,50,-3.14159,3.14159);
   recojetptz = new TH2F("recojetptz",";z_{reco};p_{T}^{jet,reco} [GeV]",
@@ -228,4 +234,7 @@ void instantiateHistos()
   recojetnconstpt = new TH2F ("recojetnconstpt", ";N_{const}^{reco}; p_{T}^{reco} [GeV] ", 20, 0, 20, 26, 4., 30.);
   
   truejetnconstpt = new TH2F ("truejetnconstpt", ";N_{const}^{true}; p_{T}^{true} [GeV] ", 20, 0, 20, 26, 4., 30.);
+
+  trued0decaypartspeta = new TH2F("trued0decaypartspeta",";p^{true} [GeV]; #eta",
+			  60,0,60,70,-3.5,3.5);
 }

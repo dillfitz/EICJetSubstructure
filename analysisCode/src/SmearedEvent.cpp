@@ -5,12 +5,16 @@
 #include <fastjet/contrib/SoftDrop.hh>
 
 #include <iostream>
+#include <random>
 
+bool defaultPID = true;
+bool requestedPID = false;
 
 void SmearedEvent::processEvent()
 {
   setScatteredLepton();
   setSmearedParticles();
+  //setSmearedParticlesPid();
 }
 
 void SmearedEvent::setScatteredLepton()
@@ -43,7 +47,6 @@ TLorentzVector SmearedEvent::getExchangeBoson()
 }
 void SmearedEvent::setSmearedParticles()
 {
-
   if (m_verbosity == -4)
     std::cout << "New D0 Smeared Event... " << std::endl;
 
@@ -74,7 +77,6 @@ void SmearedEvent::setSmearedParticles()
 	continue;
       if(truthParticle->GetPt() < m_minPartPt)
 	continue;
-
       /// If truth particle wasn't smeared (e.g. out of acceptance), skip
       /// This can also manifest itself as E==0 && p==0
       if(particle == NULL || 
@@ -85,7 +87,6 @@ void SmearedEvent::setSmearedParticles()
       /// (and we don't want it in jet finding, anyway)
       if(particle->GetE() == m_scatLepton->GetE())
 	continue;
-
       
       double px = particle->GetPx();
       double py = particle->GetPy();
@@ -125,10 +126,33 @@ void SmearedEvent::setSmearedParticles()
 	    {
 	      /// must be an electron since there is a track
 	      e = std::sqrt(p * p + 0.000511 * 0.000511);
-	    } else {
-	    ///else assume a charged pion
-	    e = std::sqrt(p * p + 0.139 * 0.139);
-	  }
+	    } 
+	  else 
+	    {
+	      /// Get truth mass
+	      double m = truthParticle->GetM();
+
+	      /// Calculate truth energy
+	      e = std::sqrt(p * p + m * m);
+	      
+	      /// Smear energy out based on truth mass
+	      if(m_smearHCal)
+		{
+		  float res = m_HCalRes->Eval(e);
+		  /// Smear it by a gaussian with width of this resolution value
+		  std::default_random_engine generator;
+		  std::normal_distribution<double> distribution(0,res);
+		  float smear = distribution(generator);
+		  /// add the smearing term
+		  e += (smear * e);
+		}
+	      else
+		{
+		  /// otherwise just assume it is a pion
+		  e = std::sqrt(p * p + 0.139 * 0.139);
+		}
+
+	    }
 	}
       
       /// Cal cluster only, no momentum info
@@ -140,14 +164,16 @@ void SmearedEvent::setSmearedParticles()
 	  if(EM){
 	    /// assume m = 0 since electron mass is so small
 	    p = e;	    
-	  } else {
-	    /// check truth mass
-	    double m = truthParticle->GetM();
-	    p = std::sqrt(e * e - m * m);
-	    /// if particle was smeared such that e*e-m*m is negative, just set to e
-	    if(p != p)
-	      p = e;
-	  }
+	  } 
+	  else 
+	    {
+	      /// check truth mass
+	      double m = truthParticle->GetM();
+	      p = std::sqrt(e * e - m * m);
+	      /// if particle was smeared such that e*e-m*m is negative, just set to e
+	      if(p != p)
+		p = e;
+	    }
 
 	  auto phi = particle->GetPhi();
 	  auto theta = particle->GetTheta();
@@ -168,6 +194,7 @@ void SmearedEvent::setSmearedParticles()
       // Check if smeared particle also passes some nominal pT cut
       if(sqrt(px * px + py * py) < m_minPartPt)
 	continue;
+	
       
       // This will skip the charm children for clustering and replace them with the charm hadron //
       bool chadChildren = false;
@@ -276,9 +303,478 @@ void SmearedEvent::setSmearedParticles()
 		    << " " << partFourVec->E() << " mass : " << partFourVec->M() << std::endl;	      
 	}
 
-      std::cout << "Smeared PID : " << particle->Id() << std::endl;
-
       m_particles.push_back(fastjet::PseudoJet(partFourVec->Px(),
+					       partFourVec->Py(),
+					       partFourVec->Pz(),
+					       partFourVec->E()));
+      /// vectors will have a one-to-one correspondance
+      m_truthParticles.push_back(fastjet::PseudoJet(truthPartFourVec->Px(),
+						    truthPartFourVec->Py(),
+						    truthPartFourVec->Pz(),
+						    truthPartFourVec->E()));
+    }
+
+  return;
+}
+
+void SmearedEvent::setSmearedParticlesPid()
+{
+  std::vector<int> skipParts;
+  if (m_verbosity == -4)
+    std::cout << "New D0 Smeared Event... " << std::endl;
+
+  //std::cout << "Truth N Tracks " << m_truthEvent->GetNTracks() << " Smeared N Tracks " << m_smearEvent->GetNTracks() << std:: endl;
+
+  int charmFlag = 0;
+  double epsilon = 1e-7;
+  BreitFrame breit(*m_truthEvent, *m_smearEvent);
+
+  for(int part = 0; part < m_smearEvent->GetNTracks(); ++part)
+    {
+      
+      /// Skip the beam
+      if( part < 3 )
+	{
+	  skipParts.push_back(part);
+	  std:: cout << part << std::endl;
+	  continue;
+	}
+
+      
+      const Smear::ParticleMCS *particle = m_smearEvent->GetTrack(part);
+      const Particle *truthParticle = m_truthEvent->GetTrack(part);
+      
+      /// only want final state particles -- should be taken care of by truth list, and will still clster D meson //
+      if(truthParticle->GetStatus() != 1)
+	{
+	  skipParts.push_back(part);
+	  std:: cout << part << std::endl;
+	  continue;
+	}
+
+      /// only particles that could nominally be in the detector
+      if(fabs(truthParticle->GetEta()) > m_maxPartEta)
+	{
+	  skipParts.push_back(part);
+	  std:: cout << part << std::endl;
+	  continue;
+	}
+      if(truthParticle->GetPt() < m_minPartPt)
+	{
+	  skipParts.push_back(part);
+	  std:: cout << part << std::endl;
+	  continue;
+	}
+
+      /// If truth particle wasn't smeared (e.g. out of acceptance), skip
+      /// This can also manifest itself as E==0 && p==0
+      if(particle == NULL || 
+	 (fabs(particle->GetE()) <= epsilon && fabs(particle->GetP()) <= epsilon))
+	{
+	  skipParts.push_back(part);
+	  std:: cout << part << std::endl;
+	  continue;
+	}
+      /// Skip the scattered electron, since it is special 
+      /// (and we don't want it in jet finding, anyway)
+      if(particle->GetE() == m_scatLepton->GetE())
+	{
+	  skipParts.push_back(part);
+	  std:: cout << part << std::endl;
+	  continue;
+	}
+      
+      double px = particle->GetPx();
+      double py = particle->GetPy();
+      double pz = particle->GetPz();
+      double e  = particle->GetE();
+
+      double truthPx = truthParticle->GetPx();
+      double truthPy = truthParticle->GetPy();
+      double truthPz = truthParticle->GetPz();
+      double truthE  = truthParticle->GetE();
+
+      if(m_verbosity > 2)
+	{
+	  std::cout << "Truth (lab) : "<<truthParticle->Id() 
+		    << " " <<truthParticle->GetPx() << " " 
+		    << truthParticle->GetPy() << " " << truthParticle->GetPz()
+		    << " " << truthParticle->GetE() << std::endl;
+	  
+	  std::cout << "Smeared (lab) : " << px << " " 
+		    << py << " " << pz << " " 
+		    << e <<  std::endl;
+	}
+
+      /// We need to handle edge cases from EICsmear where e.g. a track
+      /// is found but not connected to a calorimeter cluster
+      double p = sqrt(px * px + py * py + pz * pz);
+    
+      /// Track found but not connected to calo cluster
+      if(fabs(p) > epsilon && fabs(e) <= epsilon)
+	{
+	  /// The EIC framework ditches hadron/emcal info, so we need 
+	  /// to cheat and find out what kind of particle it is
+	  auto abspid = std::abs(truthParticle->GetPdgCode());
+	  bool EM = abspid == 22 || abspid == 11;
+	  if(EM)
+	    {
+	      /// must be an electron since there is a track
+	      e = std::sqrt(p * p + 0.000511 * 0.000511);
+	    } 
+	  else 
+	    {
+	      /// Get truth mass
+	      double m = truthParticle->GetM();
+
+	      /// Calculate truth energy
+	      e = std::sqrt(p * p + m * m);
+	      
+	      /// Smear energy out based on truth mass
+	      if(m_smearHCal)
+		{
+		  float res = m_HCalRes->Eval(e);
+		  /// Smear it by a gaussian with width of this resolution value
+		  std::default_random_engine generator;
+		  std::normal_distribution<double> distribution(0,res);
+		  float smear = distribution(generator);
+		  /// add the smearing term
+		  e += (smear * e);
+		}
+	      else
+		{
+		  /// otherwise just assume it is a pion
+		  e = std::sqrt(p * p + 0.139 * 0.139);
+		}
+
+	    }
+	}
+      
+      /// Cal cluster only, no momentum info
+      if( fabs(p) <= epsilon && fabs(e) > epsilon)
+	{
+	  /// again, cheat to figure out whether emcal or hcal
+	  auto abspid = std::abs(truthParticle->GetPdgCode());
+	  bool EM = abspid == 22 || abspid == 11;
+	  if(EM){
+	    /// assume m = 0 since electron mass is so small
+	    p = e;	    
+	  } 
+	  else 
+	    {
+	      /// check truth mass
+	      double m = truthParticle->GetM();
+	      p = std::sqrt(e * e - m * m);
+	      /// if particle was smeared such that e*e-m*m is negative, just set to e
+	      if(p != p)
+		p = e;
+	    }
+
+	  auto phi = particle->GetPhi();
+	  auto theta = particle->GetTheta();
+	  
+	  px = p * sin(theta) * cos(phi);
+	  py = p * sin(theta) * sin(phi);
+	  pz = p * cos(theta);
+	  
+	}
+
+      if(m_verbosity > 3)
+	{
+	  std::cout<<"particle to be boosted "<<std::endl;
+	  std::cout<<"("<<px<<","<<py<<","<<pz<<","<<e<<")"<<std::endl;
+	}
+
+
+      // Check if smeared particle also passes some nominal pT cut
+      if(sqrt(px * px + py * py) < m_minPartPt)
+	{
+	  skipParts.push_back(part);
+	  std:: cout << part << std::endl;
+	  continue;
+	}
+
+      double eta = particle->GetEta();
+      
+      // Let's implement PID here... //
+      int truthPid = truthParticle->GetPdgCode();
+      int pid = 0;
+
+      /// Get truth mass
+      double mass = truthParticle->GetM();
+
+      pid = pidDetectors(eta, p, mass, e, truthPid);
+      /*
+      if (defaultPID)
+	{
+	  if ( abs(truthPid) == 211 || abs(truthPid) == 321 || abs(truthPid) == 2212 )
+	    {
+	      if (-3.5 < eta && eta < -1.0)
+		if (p < 7)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (-1.0 < eta && eta < 1.0)
+		if (p < 5)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (1.0 < eta && eta < 2.0)
+		if (p < 8)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (2.0 < eta && eta < 3.0)
+		if (p < 20)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (3.0 < eta && eta < 3.5)
+		if (p < 45)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	    }
+	}
+
+      else if (requestedPID)
+	{
+	  if ( abs(truthPid) == 211 || abs(truthPid) == 321 || abs(truthPid) == 2212 )
+	    {
+	      if (-3.5 < eta && eta < -1.0)
+		if (p < 7.0)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (-1.0 < eta && eta < 0.0)
+		if (p < 10.0)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (0.0 < eta && eta < 1.0)
+		if (p < 15.0)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (1.0 < eta && eta < 1.5)
+		if (p < 30.0)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (1.5 < eta && eta < 2.0)
+		if (p < 50.0)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (2.0 < eta && eta < 2.5)
+		if (p < 50.0)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (2.5 < eta && eta < 3.0)
+		if (p < 30.0)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	      if (3.0 < eta && eta < 3.5)
+		if (p < 20.0)
+		  {
+		    pid = truthPid;
+		    e = std::sqrt(p * p + m * m);
+		  }
+	    }
+	}
+      */
+      std::cout << "Smeared particle PID : " << pid << std::endl;
+      std::cout << "Truth particle PID : " << truthPid << std::endl;
+
+      TLorentzVector *partFourVec = new TLorentzVector();
+      TLorentzVector *truthPartFourVec = new TLorentzVector();
+      partFourVec->SetPxPyPzE(px,py,pz,e);
+      truthPartFourVec->SetPxPyPzE(truthPx,truthPy,truthPz,truthE);
+
+
+      /*
+      std::cout << "Truth (lab) : "<<truthParticle->Id() 
+		    << " " <<truthPx << " " 
+		    << truthPy << " " << truthPz
+		<< " " << truthE << " " << truthPartFourVec->M() << std::endl;
+	  
+      std::cout << "Smeared (lab) : " << px << " " 
+		    << py << " " << pz << " " 
+		<< e << " " << partFourVec->M()<< std::endl;
+      */
+
+      TLorentzVector partVec(px,py,pz,e);
+      TLorentzVector pairVec;
+
+      //std::cout<< m_smearEvent->GetTrack(23)->GetPx() << std::endl;
+
+      
+      for(int part2 = 0; part2 < m_smearEvent->GetNTracks(); ++part2)
+	{
+	  // if  (std::find(skipParts.begin(), skipParts.end(), part2) != skipParts.end())
+	  //continue;
+
+	  /// Skip the beam
+	  if( part2 < 3 )
+	    {
+	      continue;
+	    }
+    
+	  const Smear::ParticleMCS *particle2 = m_smearEvent->GetTrack(part2);
+	  const Particle *truthParticle2 = m_truthEvent->GetTrack(part2);
+	  
+	  if(truthParticle2->GetStatus() != 1)
+	    {
+	      continue;
+	    }
+	  
+	  /// only particles that could nominally be in the detector
+	  if(fabs(truthParticle2->GetEta()) > m_maxPartEta)
+	    {
+	      continue;
+	    }
+	  if(truthParticle2->GetPt() < m_minPartPt)
+	    {
+	      continue;
+	    }
+	  
+	  /// If truth particle wasn't smeared (e.g. out of acceptance), skip
+	  /// This can also manifest itself as E==0 && p==0
+	  if(particle2 == NULL || 
+	     (fabs(particle2->GetE()) <= epsilon && fabs(particle2->GetP()) <= epsilon))
+	    {
+	      continue;
+	    }
+	  /// Skip the scattered electron, since it is special 
+	  /// (and we don't want it in jet finding, anyway)
+	  if(particle2->GetE() == m_scatLepton->GetE())
+	    {
+	      continue;
+	    }
+
+	  double px2 = particle2->GetPx();
+	  double py2 = particle2->GetPy();
+	  double pz2 = particle2->GetPz();
+	  double e2  = particle2->GetE();
+
+	  /// We need to handle edge cases from EICsmear where e.g. a track
+	  /// is found but not connected to a calorimeter cluster
+	  double p2 = sqrt(px2 * px2 + py2 * py2 + pz2 * pz2);
+	  /// Track found but not connected to calo cluster
+	  if(fabs(p2) > epsilon && fabs(e2) <= epsilon)
+	    {
+	      /// The EIC framework ditches hadron/emcal info, so we need 
+	      /// to cheat and find out what kind of particle it is
+	      auto abspid2 = std::abs(truthParticle2->GetPdgCode());
+	      bool EM2 = abspid2 == 22 || abspid2 == 11;
+	      if(EM2)
+		{
+		  /// must be an electron since there is a track
+		  e2 = std::sqrt(p2 * p2 + 0.000511 * 0.000511);
+		} 
+	      else 
+		{
+		  /// Get truth mass
+		  double m2 = truthParticle2->GetM();
+		  
+		  /// Calculate truth energy
+		  e2 = std::sqrt(p2 * p2 + m2 * m2);
+		  
+		  /// Smear energy out based on truth mass
+		  if(m_smearHCal)
+		    {
+		      float res = m_HCalRes->Eval(e2);
+		      /// Smear it by a gaussian with width of this resolution value
+		      std::default_random_engine generator;
+		      std::normal_distribution<double> distribution(0,res);
+		      float smear = distribution(generator);
+		      /// add the smearing term
+		      e2 += (smear * e2);
+		    }
+		  else
+		    {
+		      /// otherwise just assume it is a pion
+		      e2 = std::sqrt(p2 * p2 + 0.139 * 0.139);
+		    }
+		  
+		}
+	    }
+	  
+	  /// Cal cluster only, no momentum info
+	  if( fabs(p2) <= epsilon && fabs(e2) > epsilon)
+	    {
+	      /// again, cheat to figure out whether emcal or hcal
+	      auto abspid2 = std::abs(truthParticle2->GetPdgCode());
+	      bool EM2 = abspid2 == 22 || abspid2 == 11;
+	      if(EM2){
+		/// assume m = 0 since electron mass is so small
+		p2 = e2;	    
+	      } 
+	      else 
+		{
+		  /// check truth mass
+		  double m2 = truthParticle2->GetM();
+		  p2 = std::sqrt(e2 * e2 - m2 * m2);
+		  /// if particle was smeared such that e*e-m*m is negative, just set to e
+		  if(p2 != p2)
+		    p2 = e2;
+		}
+	      
+	      auto phi2 = particle2->GetPhi();
+	      auto theta2 = particle2->GetTheta();
+	      
+	      px2 = p2 * sin(theta2) * cos(phi2);
+	      py2 = p2 * sin(theta2) * sin(phi2);
+	      pz2 = p2 * cos(theta2);
+	      
+	    }
+
+	  // Check if smeared particle also passes some nominal pT cut
+	  if(sqrt(px2 * px2 + py2 * py2) < m_minPartPt)
+	    {
+	      continue;
+	    }
+	  
+	  //const Smear::ParticleMCS *particle2 = m_smearEvent->GetTrack(part2);
+	  //std::cout << "second loop counter " << part2 << std::endl;
+	  // double 
+
+
+	  TLorentzVector part2Vec(px2, py2, pz2, e2);
+	  pairVec = partVec + part2Vec;
+	  std::cout << "Pair Mass : " << pairVec.M() << std::endl;
+	  	  
+	}
+
+      if(m_breitFrame)
+	{
+	  breit.labToBreitTruth( truthPartFourVec );
+	  breit.labToBreitSmear( partFourVec );
+	}
+
+
+      if(m_verbosity > 0)
+	{
+	  std::cout << "Smeared : " <<partFourVec->Px() << " " 
+		    << partFourVec->Py() << " " << partFourVec->Pz()
+		    << " " << partFourVec->E() << " mass : " << partFourVec->M() << std::endl;	      
+	}
+
+     m_particles.push_back(fastjet::PseudoJet(partFourVec->Px(),
 					       partFourVec->Py(),
 					       partFourVec->Pz(),
 					       partFourVec->E()));
@@ -479,4 +975,102 @@ PseudoJetVec SmearedEvent::CharmJetTagging(PseudoJetVec recoJets)
     }
 
   return charmJets;
+}
+
+
+int SmearedEvent::pidDetectors(double eta, double p, double m, double &e, int truthPid )
+{
+  int pid = 0;
+  if (defaultPID)
+    {
+      if ( abs(truthPid) == 211 || abs(truthPid) == 321 || abs(truthPid) == 2212 )
+	{
+	  if (-3.5 < eta && eta < -1.0)
+	    if (p < 7)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (-1.0 < eta && eta < 1.0)
+	    if (p < 5)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (1.0 < eta && eta < 2.0)
+	    if (p < 8)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (2.0 < eta && eta < 3.0)
+	    if (p < 20)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (3.0 < eta && eta < 3.5)
+	    if (p < 45)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	}
+    }
+  
+  else if (requestedPID)
+    {
+      if ( abs(truthPid) == 211 || abs(truthPid) == 321 || abs(truthPid) == 2212 )
+	{
+	  if (-3.5 < eta && eta < -1.0)
+	    if (p < 7.0)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (-1.0 < eta && eta < 0.0)
+	    if (p < 10.0)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (0.0 < eta && eta < 1.0)
+	    if (p < 15.0)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (1.0 < eta && eta < 1.5)
+	    if (p < 30.0)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (1.5 < eta && eta < 2.0)
+	    if (p < 50.0)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (2.0 < eta && eta < 2.5)
+	    if (p < 50.0)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (2.5 < eta && eta < 3.0)
+	    if (p < 30.0)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	  if (3.0 < eta && eta < 3.5)
+	    if (p < 20.0)
+	      {
+		pid = truthPid;
+		e = std::sqrt(p * p + m * m);
+	      }
+	}
+    }
+  return pid;
 }

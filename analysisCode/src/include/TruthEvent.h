@@ -45,6 +45,7 @@ class TruthEvent {
 
   std::vector<int> getPartIndices() { return m_partIndices; }
   std::vector<int> getChadChildIndices() { return m_chadChildIndices; }
+  std::vector<TLorentzVector> getD0DecayParticles() {return m_d0DecayParticles; }
 
 
   /// Setters for various cuts
@@ -72,6 +73,7 @@ class TruthEvent {
 
 
   TLorentzVector getExchangeBoson();
+  TLorentzVector getScatteredLepton(){return m_scatLepton->Get4Vector();}
 
  private:
   /// Member variables defining the truth level cuts
@@ -91,12 +93,15 @@ class TruthEvent {
   int m_verbosity = 0;
 
   PseudoJetVec m_particles;
+  std::vector<TLorentzVector>  m_d0DecayParticles;
   std::vector<int> m_partIndices;
   std::vector<int> m_chadChildIndices;
 
 
   void setScatteredLepton();
   void setTruthParticles();
+  void setTruthD0Decay();
+
 
 };
 
